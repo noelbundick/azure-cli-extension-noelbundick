@@ -1,3 +1,6 @@
 #!/bin/sh
 
-python src/noelbundick/setup.py bdist_wheel
+DIR=$(dirname $0)
+SRC="${DIR}/../src/noelbundick/setup.py"
+DEST="${DIR}/../dist"
+python $SRC bdist_wheel -d $DEST
