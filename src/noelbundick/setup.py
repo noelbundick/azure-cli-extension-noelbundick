@@ -8,7 +8,7 @@
 from codecs import open
 from setuptools import setup, find_packages
 
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
@@ -29,8 +29,8 @@ DEPENDENCIES = []
 setup(
     name='noelbundick',
     version=VERSION,
-    description='An Azure CLI extension to interact with Log Analytics.',
-    long_description='An Azure CLI extension to interact with Log Analytics.',
+    description='An Azure CLI extension that @acanthamoeba likes.',
+    long_description='An Azure CLI extension that includes useful functionality that @acanthamoeba likes, but doesn\'t have time to write tests for.',
     license='MIT',
     author='Noel Bundick',
     author_email='noelbundick@gmail.com',

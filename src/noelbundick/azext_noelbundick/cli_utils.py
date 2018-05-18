@@ -12,8 +12,8 @@ from knack.util import CLIError
 
 logger = get_logger(__name__)
 
-def az_cli(cmd, env=None):
-  cli_cmd = prepare_cli_command(cmd)
+def az_cli(cmd, env=None, output_as_json=True):
+  cli_cmd = prepare_cli_command(cmd, output_as_json=output_as_json)
   json_cmd_output = run_cli_command(cli_cmd, env=env)
   return json_cmd_output
 
