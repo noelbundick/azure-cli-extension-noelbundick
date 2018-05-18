@@ -21,6 +21,10 @@ def load_arguments(self, _):
     with self.argument_context('loganalytics workspace') as c:
         c.argument('workspace_name', options_list=['--name', '-n'])
 
+    with self.argument_context('loganalytics workspace create') as c:
+        c.argument('sku', arg_type=get_enum_type(
+            ['Free', 'Standalone', 'PerNode', 'PerGB2018']))
+
     with self.argument_context('loganalytics workspace update') as c:
         c.argument('sku', arg_type=get_enum_type(
             ['Free', 'Standalone', 'PerNode', 'PerGB2018']))
@@ -34,12 +38,21 @@ def show_workspace(resource_group_name, workspace_name):
     return workspace
 
 
-def create_workspace(resource_group_name, workspace_name):
-    workspace = az_cli(['resource', 'create',
-                        '-n', workspace_name,
-                        '-g', resource_group_name,
-                        '--resource-type', 'Microsoft.OperationalInsights/workspaces',
-                        '-p', '{}'])
+def create_workspace(resource_group_name, workspace_name, sku='Free', location=None):
+    properties = {}
+    properties['sku'] = {}
+    properties['sku']['name'] = sku
+
+    command = ['resource', 'create',
+                '-n', workspace_name,
+                '-g', resource_group_name,
+                '--resource-type', 'Microsoft.OperationalInsights/workspaces',
+                '-p', json.dumps(properties)]
+    
+    if location:
+        command.extend(['-l', location])
+
+    workspace = az_cli(command)
     return workspace
 
 

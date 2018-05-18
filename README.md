@@ -2,24 +2,13 @@
 
 This repo contains things that I like or find useful, offered up with absolutely zero guarantee that it will work for anyone else
 
-## Features
+## Log Analytics
 
-### Log Analytics - List workspace keys
-
-Usage:
-
-```bash
-az loganalytics workspace keys list -n myworkspace -g myresourcegroup
-```
-
-Output:
-
-```json
-{
-  "primarySharedKey": "EQEDQ+kmMlqiavat9HMa4ZrPDrAs1P6c6ZcQDY+WY3x9Qy3gapo+7UhzZT2UwCvhg5sfp65hhGjpFm8ljXB7+w==",
-  "secondarySharedKey": "Vj95R5kIRICkzFVHAS+j2tVBiXsBLlNNEzJa8A1vgD7CkeI7MTbOTUAs8sy3RLV+n2KDbhA+iQHw3kd5BhhevA=="
-}
-```
+* `az loganalytics workspace create`
+* `az loganalytics workspace delete`
+* `az loganalytics workspace show`
+* `az loganalytics workspace update`
+* `az loganalytics workspace keys list`
 
 ## Development
 

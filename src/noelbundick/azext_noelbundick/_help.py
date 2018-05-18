@@ -31,6 +31,9 @@ helps['loganalytics workspace create'] = """
     - name: --name -n
       type: string
       short-summary: The name of the workspace
+    - name: --sku
+      type: string
+      short-summary: (Optional) The SKU of the workspace. The SKU must match the pricing tier for your subscription (http://aka.ms/PricingTierWarning)
 """
 
 helps['loganalytics workspace update'] = """
