@@ -2,6 +2,10 @@
 
 This repo contains things that I like or find useful, offered up with absolutely zero guarantee that it will work for anyone else
 
+## Azure Active Directory
+
+* `az ad sp create-for-ralph`: Create a Service Principal and store the password in Key Vault ([thread](https://twitter.com/acanthamoeba/status/988185653199360002))
+
 ## Log Analytics
 
 * `az loganalytics workspace create`
