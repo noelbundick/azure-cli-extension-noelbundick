@@ -25,6 +25,10 @@ def run_cli_command(cmd, return_as_json=True, empty_json_as_error=False, env=Non
 
         if return_as_json:
             if cmd_output:
+                # SOME commands spew warnings in the output when there's not really a problem so the output can't be composed :(
+                # so - we'll just take from the first { and hope for the best
+                cmd_output = cmd_output[cmd_output.index("{"):] #pylint: disable=E1136
+
                 json_output = json.loads(cmd_output)
                 return json_output
             elif empty_json_as_error:

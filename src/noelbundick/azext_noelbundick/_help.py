@@ -1,5 +1,33 @@
 from knack.help_files import helps
 
+helps['ad sp create-for-ralph'] = """
+  type: command
+  short-summary: Create a service principal and store the password in Key Vault
+  parameters:
+    - name: --keyvault -k
+      type: string
+      short-summary: The name of the Key Vault to store the secret in.
+    - name: --name -n
+      type: string
+      short-summary: Name or app URI to associate the RBAC with. If not present, a name will be generated.
+    - name: --password -p
+      type: string
+      short-summary: The password used to log in.
+      long-summary: If not present, a random password will be generated.
+    - name: --role
+      type: string
+      short-summary: Role of the service principal.
+    - name: --scopes
+      type: string
+      short-summary: Space-separated list of scopes the service principal's role assignment applies to. Defaults to the root of the current subscription.
+    - name: --secret-name -s
+      type: string
+      short-summary: The name of the Key Vault secret.
+    - name: --skip-assignment
+      type: string
+      short-summary: Do not create default assignment.
+"""
+
 helps['loganalytics'] = """
   type: group
   short-summary: Manage Log Analytics
