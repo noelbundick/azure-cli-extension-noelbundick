@@ -14,6 +14,12 @@ This repo contains things that I like or find useful, offered up with absolutely
 * `az loganalytics workspace update`
 * `az loganalytics workspace keys list`
 
+## Virtual Machines
+
+* `az vm auto-shutdown enable`
+* `az vm auto-shutdown disable`
+* `az vm auto-shutdown show`
+
 ## Development
 
 ```bash

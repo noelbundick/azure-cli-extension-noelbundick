@@ -5,7 +5,7 @@ from azure.cli.core import AzCommandsLoader
 from ._help import helps
 
 # Imported modules must implement load_command_table and load_arguments
-module_names = ['ad', 'loganalytics']
+module_names = ['ad', 'loganalytics', 'vm']
 
 # Example module as a clean place to start from
 # module_names.append('sample')

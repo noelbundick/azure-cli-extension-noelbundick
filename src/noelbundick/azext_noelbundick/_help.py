@@ -96,3 +96,43 @@ helps['loganalytics workspace keys list'] = """
       type: string
       short-summary: The name of the workspace
 """
+
+helps['vm auto-shutdown'] = """
+  type: group
+  short-summary: Manage auto-shutdown schedules
+"""
+
+helps['vm auto-shutdown enable'] = """
+  type: command
+  short-summary: Enable auto-shutdown for a VM
+  long-summary: This command also overrides an existing auto-shutdown schedule
+  parameters:
+    - name: --name -n
+      type: string
+      short-summary: The name of the virtual machine
+    - name: --time -t
+      type: string
+      short-summary: "The time, in 24hr format, to automatically shut down the VM. Ex: 1700"
+    - name: --timezone-id -tz
+      type: string
+      short-summary: The timezone id for the specified time.
+      long-summary: "Tip: specifying something bogus like '-tz foo' will spew out an error with the possible values."
+"""
+
+helps['vm auto-shutdown disable'] = """
+  type: command
+  short-summary: Disable auto-shutdown for a VM
+  parameters:
+    - name: --name -n
+      type: string
+      short-summary: The name of the virtual machine
+"""
+
+helps['vm auto-shutdown show'] = """
+  type: command
+  short-summary: Show the current auto-shutdown schedule for a VM
+  parameters:
+    - name: --name -n
+      type: string
+      short-summary: The name of the virtual machine
+"""
