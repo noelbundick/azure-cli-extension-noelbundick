@@ -26,6 +26,7 @@ def load_arguments(self, _):
 def enable_vm_autoshutdown(vm_name, resource_group_name, time, timezone_id='UTC'):
     _, subscription_id = get_access_token()
     properties = {}
+    properties['status'] = 'Enabled'
     properties['dailyRecurrence'] = {}
     properties['dailyRecurrence']['time'] = time
     properties['targetResourceId'] = '/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}'.format(
