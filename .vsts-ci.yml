@@ -4,6 +4,9 @@ resources:
 queue:
   name: Hosted VS2017
 steps:
+- task: PowerShell@2
+  inputs:
+    filePath: scripts/setVersion.ps1
 - task: stevedower.python.BuildWheel.BuildWheel@1
   inputs:
     setuppy: 'src/noelbundick/setup.py'
