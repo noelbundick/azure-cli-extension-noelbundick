@@ -77,7 +77,7 @@ def prepare_cli_command(cmd, output_as_json=True):
                 create_tags = False
                 cmd[idx+1] = cmd[idx+1] + ' created_by=noelbundick-extension'
 
-        if not create_tags:
+        if create_tags:
             full_cmd += ['--tags', 'created_by=noelbundick-extension']
 
     return full_cmd

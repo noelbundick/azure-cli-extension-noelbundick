@@ -4,8 +4,9 @@ from azure.cli.core import AzCommandsLoader
 
 from ._help import helps
 
-# Imported modules must implement load_command_table and load_arguments
-module_names = ['ad', 'loganalytics', 'vm']
+# Imported modules MUST implement load_command_table and load_arguments
+# Imported modules CAN optionally implement init 
+module_names = ['ad', 'loganalytics', 'self_destruct', 'vm']
 
 # Example module as a clean place to start from
 # module_names.append('sample')
@@ -16,6 +17,12 @@ class NoelBundickCommandsLoader(AzCommandsLoader):
 
     def __init__(self, cli_ctx=None):
         super(NoelBundickCommandsLoader, self).__init__(cli_ctx=cli_ctx)
+        for m in modules:
+            try:
+                m.init(self)
+            except AttributeError:
+                # init (most likely) doesn't exist. Ignore
+                pass
 
     def load_command_table(self, args):
         for m in modules:
