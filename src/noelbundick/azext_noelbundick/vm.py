@@ -6,7 +6,7 @@ from .cli_utils import az_cli
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl='{}#{{}}'.format(__loader__.name))
+    custom = CliCommandType(operations_tmpl='{}#{{}}'.format(__name__))
 
     with self.command_group('vm auto-shutdown', custom_command_type=custom) as g:
         g.custom_command('enable', 'enable_vm_autoshutdown')
