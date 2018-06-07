@@ -102,6 +102,21 @@ helps['self-destruct'] = """
   short-summary: Manage automatic deletion settings
 """
 
+helps['self-destruct arm'] = """
+  type: command
+  short-summary: Schedule automatic deletion of a resource
+  parameters:
+    - name: --id
+      type: string
+      short-summary: The id of a resource to scheduled for deletion
+    - name: --resource-group -g
+      type: string
+      short-summary: The name of a resource group to schedule for deletion
+    - name: --timer -t
+      type: string
+      short-summary: How long to wait until deletion. You can specify durations like 1d, 6h, 2h30m, 30m, etc
+"""
+
 helps['self-destruct configure'] = """
   type: command
   short-summary: Configure the service principal used for automatic deletion

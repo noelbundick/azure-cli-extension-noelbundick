@@ -16,14 +16,15 @@ This repo contains things that I like or find useful, offered up with absolutely
 
 ## Self-Destruct Mode
 
-Set an expiration time when creating a resource, and a Logic App will automatically delete it when the time's up.
+Set an expiration time when creating a resource or resource group, and a Logic App will automatically delete it when the time's up.
 
 * `az * create --self-destruct`: Global argument that enables automatic deletion. You can specify self-destruct dates like 1d, 6h, 2h30m, 30m, etc
+* `az self-destruct arm`: enable automatic deletion on a resource that already exists
 * `az self-destruct configure`: one-time configuration
 * `az self-destruct disarm`: disable automatic deletion for a resource
 * `az self-destruct list`: list items that are scheduled for deletion
 
-> Works on resources and normal Azure resources like storage accounts only. Guaranteed to break for data-plane operations like blobs
+> Works on management-plane resources only (resource groups, storage accounts, VMs). Guaranteed to be broken for data-plane operations like blobs
 
 ### Usage
 

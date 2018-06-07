@@ -37,6 +37,7 @@ def load_command_table(self, _):
     custom = CliCommandType(operations_tmpl='{}#{{}}'.format(__name__))
 
     with self.command_group('self-destruct', custom_command_type=custom) as g:
+        g.custom_command('arm', 'arm')
         g.custom_command('configure', 'configure')
         g.custom_command('disarm', 'disarm')
         g.custom_command('list', 'list')
@@ -44,6 +45,11 @@ def load_command_table(self, _):
 
 # TODO: register --self-destruct on all 'create' commands
 def load_arguments(self, _):
+    with self.argument_context('self-destruct arm') as c:
+        c.argument('resource_id', options_list=['--id'])
+        c.argument('resource_group_name', options_list=['--resource-group', '-g'])
+        c.argument('timer', options_list=['--timer', '-t'])
+
     with self.argument_context('self-destruct configure') as c:
         c.argument('force', options_list=['--resource-group', '-g'])
         c.argument('force', options_list=['--force', '-f'])
@@ -68,19 +74,14 @@ def list():
     self_destruct_resources.extend(resources)
     
     return self_destruct_resources
-    
 
-def disarm(resource_id=None, resource_group_name=None):
-    if not any([resource_id, resource_group_name]):
-        raise CLIError('You must specify a resourceId or resource group name')
-
+def get_resource(resource_id=None, resource_group_name=None):
     if resource_id:
         resource = az_cli(['resource', 'show',
                             '--ids', resource_id])
         resource_type = resource['type']
         _, resource_type = resource_type.split('/')
         resource_group = resource['resourceGroup']
-        name = resource['name']
         if not resource:
             raise CLIError('Could not find resource with id: {}'.format(resource_id))
     else:
@@ -88,12 +89,39 @@ def disarm(resource_id=None, resource_group_name=None):
                             '-n', resource_group_name])
         resource_type = 'resourceGroup'
         resource_group = resource_group_name
-        name = resource['name']
         if not resource:
             raise CLIError('Could not find resource group with name: {}'.format(resource_group_name))
-    
+    return resource, resource_type, resource_group
 
-    # Get api-version
+def arm(cmd, timer, resource_id=None, resource_group_name=None):
+    if not any([resource_id, resource_group_name]):
+        raise CLIError('You must specify a resourceId or resource group name')
+
+    resource, _, _ = get_resource(resource_id=resource_id, resource_group_name=resource_group_name)
+    read_self_destruct_config()
+    self_destruct['destroyDate'] = get_destruct_time(timer)
+    
+    logger.warn('You\'ve activated a self-destruct sequence! This resource will be deleted at {} UTC'.format(self_destruct['destroyDate']))
+
+    deploy_self_destruct_template(cmd.cli_ctx, resource)
+
+    if resource_id:
+        args = ['resource', 'update', '--ids', resource_id]
+    else:
+        args = ['group', 'update', '-n', resource_group_name]
+    
+    args.extend(['--set', 'tags.self-destruct'])
+    args.extend(['--set', 'tags.self-destruct-date={}'.format(self_destruct['destroyDate'])])
+    az_cli(args)
+
+
+def disarm(resource_id=None, resource_group_name=None):
+    if not any([resource_id, resource_group_name]):
+        raise CLIError('You must specify a resourceId or resource group name')
+
+    resource, resource_type, resource_group = get_resource(resource_id=resource_id, resource_group_name=resource_group_name)
+    name = resource['name']
+    
     logic_name = 'self-destruct-{}-{}-{}'.format(resource_type, resource_group, name)
 
     logic_app = az_cli(['resource', 'show',
@@ -165,6 +193,42 @@ def configure(client_id=None, client_secret=None, tenant_id=None, force=False):
     return dict(config.items('self-destruct'))
 
 
+# read self-destruct config, error if not present
+def read_self_destruct_config():
+    try:
+        config = get_config_parser()
+        config.read(SELF_DESTRUCT_PATH)
+        self_destruct['clientId'] = config.get('self-destruct', 'client-id')
+        self_destruct['clientSecret'] = config.get('self-destruct', 'client-secret')
+        self_destruct['tenantId'] = config.get('self-destruct', 'tenant-id')
+        if not all(self_destruct):
+            raise CLIError('Please run `az self-destruct configure` to configure self-destruct mode')
+    except Exception:
+        raise CLIError('Please run `az self-destruct configure` to configure self-destruct mode')
+
+
+def get_destruct_time(delta_str):
+    try:
+        delta = parse_time(delta_str)
+        now = datetime.utcnow()
+        destroy_date = now + delta
+        return destroy_date
+    except Exception:
+        raise CLIError('Could not parse the time offset {}'.format(delta_str))
+
+
+def add_self_destruct_tag_args(args, destroy_date):
+    create_tags = True
+    for idx, arg in enumerate(args):
+        if arg == '--tags':
+            create_tags = False
+            args.insert(idx+1, 'self-destruct-date={}'.format(destroy_date))
+            args.insert(idx+1, 'self-destruct=')
+
+    if create_tags:
+        args.extend(['--tags', 'self-destruct', 'self-destruct-date={}'.format(destroy_date)])
+
+
 def self_destruct_pre_parse_args_handler(_, **kwargs):
     args = kwargs.get('args')
 
@@ -177,87 +241,65 @@ def self_destruct_pre_parse_args_handler(_, **kwargs):
         if 'container' in args:
             raise CLIError('`az container create` does not support tags')
                 
-        # read self-destruct config, error if not present
-        try:
-            config = get_config_parser()
-            config.read(SELF_DESTRUCT_PATH)
-            self_destruct['clientId'] = config.get('self-destruct', 'client-id')
-            self_destruct['clientSecret'] = config.get('self-destruct', 'client-secret')
-            self_destruct['tenantId'] = config.get('self-destruct', 'tenant-id')
-            if not all(self_destruct):
-                raise CLIError('Please run `az self-destruct configure` to configure self-destruct mode')
-        except Exception:
-            raise CLIError('Please run `az self-destruct configure` to configure self-destruct mode')
+        read_self_destruct_config()
 
         index = args.index('--self-destruct')
         delta_str = args[index+1]
-        try:
-            delta = parse_time(delta_str)
-            now = datetime.utcnow()
-            destroy_date = now + delta
-            self_destruct['destroyDate'] = destroy_date
-        except Exception:
-            raise CLIError('Could not parse the time offset {}'.format(delta_str))
+        self_destruct['destroyDate'] = get_destruct_time(delta_str)
         
-        # remove self-destruct params so downstream commands never see them
+        # remove self-destruct args so downstream commands never see them
         del args[index+1]
         del args[index]
         
-        logger.warn('You\'ve activated a self-destruct sequence! This resource will be deleted at {} UTC'.format(destroy_date))
+        logger.warn('You\'ve activated a self-destruct sequence! This resource will be deleted at {} UTC'.format(self_destruct['destroyDate']))
         self_destruct['active'] = True
 
-        create_tags = True
-        for idx, arg in enumerate(args):
-            if arg == '--tags':
-                create_tags = False
-                args.insert(idx+1, 'self-destruct-date={}'.format(destroy_date))
-                args.insert(idx+1, 'self-destruct=')
+        add_self_destruct_tag_args(args, self_destruct['destroyDate'])
 
-        if create_tags:
-            args.extend(['--tags', 'self-destruct', 'self-destruct-date={}'.format(destroy_date)])
+
+def deploy_self_destruct_template(cli_ctx, resource):
+    id = resource['id']
+    if 'type' in resource:
+        resource_type = resource['type']
+        resource_group = resource['resourceGroup']
+        # Get api-version
+        namespace, resource_type = resource_type.split('/')
+        api_version = az_cli(['provider', 'show',
+                            '-n', namespace,
+                            '--query', 'resourceTypes | [?resourceType==`{}`] | [0].apiVersions[0]'.format(resource_type)],
+                            output_as_json=False)
+    else:
+        resource_type = 'resourceGroup'
+        resource_group = resource['name']
+        api_version = '2018-02-01'
+    
+    name = resource['name']
+
+    # Build ARM URL
+    resource_uri = "https://management.azure.com{}?api-version={}".format(id, api_version)
+    logger.info(resource_uri)
+    
+    # Create Logic App
+    template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'self_destruct_template.json')
+    template = get_file_json(template_file)
+    
+    parameters = {}
+    parameters['name'] = {"value": 'self-destruct-{}-{}-{}'.format(resource_type, resource_group, name)}
+    parameters['utcTime'] = {"value": self_destruct['destroyDate'].strftime('%Y-%m-%dT%H:%M:%SZ')}
+    parameters['resourceUri'] = {"value": resource_uri}
+    parameters['servicePrincipalClientId'] = {"value": self_destruct['clientId']}
+    parameters['servicePrincipalClientSecret'] = {"value": self_destruct['clientSecret']}
+    parameters['servicePrincipalTenantId'] = {"value": self_destruct['tenantId']}
+    
+    logger.warn('Creating Logic App {} to delete {} at {}'.format(parameters['name']['value'], id, self_destruct['destroyDate']))
+    deploy_result = _deploy_arm_template_core(cli_ctx, resource_group, 'self_destruct', template, parameters)
+    logger.info(deploy_result)
 
 
 def self_destruct_transform_handler(cli_ctx, **kwargs):
     if self_destruct['active']:
         result = kwargs.get('event_data')['result']
-        id = result['id']
-        
-        if 'type' in result:
-            resource_type = result['type']
-            resource_group = result['resourceGroup']
-            # Get api-version
-            namespace, resource_type = resource_type.split('/')
-            api_version = az_cli(['provider', 'show',
-                                '-n', namespace,
-                                '--query', 'resourceTypes | [?resourceType==`{}`] | [0].apiVersions[0]'.format(resource_type)],
-                                output_as_json=False)
-        else:
-            resource_type = 'resourceGroup'
-            resource_group = result['name']
-            api_version = '2018-02-01'
-        
-        name = result['name']
-
-        # Build ARM URL
-        resource_uri = "https://management.azure.com{}?api-version={}".format(id, api_version)
-        logger.info(resource_uri)
-        
-        # Create Logic App
-        template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'self_destruct_template.json')
-        template = get_file_json(template_file)
-        
-        parameters = {}
-        parameters['name'] = {"value": 'self-destruct-{}-{}-{}'.format(resource_type, resource_group, name)}
-        parameters['utcTime'] = {"value": self_destruct['destroyDate'].strftime('%Y-%m-%dT%H:%M:%SZ')}
-        parameters['resourceUri'] = {"value": resource_uri}
-        parameters['servicePrincipalClientId'] = {"value": self_destruct['clientId']}
-        parameters['servicePrincipalClientSecret'] = {"value": self_destruct['clientSecret']}
-        parameters['servicePrincipalTenantId'] = {"value": self_destruct['tenantId']}
-        
-        logger.warn('Creating Logic App {} to delete {} at {}'.format(parameters['name']['value'], id, self_destruct['destroyDate']))
-        deploy_result = _deploy_arm_template_core(cli_ctx, resource_group, 'self_destruct', template, parameters)
-        logger.info(deploy_result)
-
+        deploy_self_destruct_template(cli_ctx, result)
 
 def get_config_parser():
     if sys.version_info.major == 3:
