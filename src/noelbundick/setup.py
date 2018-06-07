@@ -37,5 +37,6 @@ setup(
     url='https://github.com/noelbundick/azure-cli-extension-noelbundick',
     classifiers=CLASSIFIERS,
     packages=find_packages(),
-    install_requires=DEPENDENCIES
+    install_requires=DEPENDENCIES,
+    package_data={'azext_noelbundick': ['self_destruct_template.json']}
 )

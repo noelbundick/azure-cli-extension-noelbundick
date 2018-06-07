@@ -97,6 +97,46 @@ helps['loganalytics workspace keys list'] = """
       short-summary: The name of the workspace
 """
 
+helps['self-destruct'] = """
+  type: group
+  short-summary: Manage automatic deletion settings
+"""
+
+helps['self-destruct configure'] = """
+  type: command
+  short-summary: Configure the service principal used for automatic deletion
+  parameters:
+    - name: --client-id
+      type: string
+      short-summary: The clientId of the service principal
+    - name: --client-secret
+      type: string
+      short-summary: The password of the service principal
+    - name: --force -f
+      type: string
+      short-summary: Overwrite saved service principal information
+    - name: --tenant-id
+      type: string
+      short-summary: The tenantId of the service principal
+"""
+
+helps['self-destruct disarm'] = """
+  type: command
+  short-summary: Cancel automatic deletion of a resource
+  parameters:
+    - name: --id
+      type: string
+      short-summary: The id of a resource that is scheduled for deletion
+    - name: --resource-group -g
+      type: string
+      short-summary: The name of a resource group that is scheduled for deletion
+"""
+
+helps['self-destruct list'] = """
+  type: command
+  short-summary: List items that are scheduled to be deleted based on `self-destruct` tag
+"""
+
 helps['vm auto-shutdown'] = """
   type: group
   short-summary: Manage auto-shutdown schedules

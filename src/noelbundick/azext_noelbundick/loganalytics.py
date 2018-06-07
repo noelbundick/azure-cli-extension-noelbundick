@@ -89,6 +89,5 @@ def list_workspace_keys(resource_group_name, workspace_name):
                    '-n', workspace_name,
                    '-g', resource_group_name,
                    '--resource-type', 'Microsoft.OperationalInsights/workspaces',
-                   '--action', 'listKeys'],
-                  output_as_json=False)
+                   '--action', 'listKeys'])
     return keys
