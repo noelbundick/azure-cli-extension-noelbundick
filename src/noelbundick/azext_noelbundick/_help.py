@@ -1,5 +1,10 @@
 from knack.help_files import helps
 
+helps['ad app list-mine'] = """
+  type: command
+  short-summary: List applications that you own
+"""
+
 helps['ad sp create-for-ralph'] = """
   type: command
   short-summary: Create a service principal and store the password in Key Vault
@@ -26,6 +31,15 @@ helps['ad sp create-for-ralph'] = """
     - name: --skip-assignment
       type: string
       short-summary: Do not create default assignment.
+"""
+
+helps['ad sp list-mine'] = """
+  type: command
+  short-summary: List service principals that you own
+  parameters:
+    - name: --expires-in -e
+      type: string
+      short-summary: If provided, will only return service principals that expire within the specified time window. You can specify durations like 1d, 6h, 2h30m, 30m, etc
 """
 
 helps['loganalytics'] = """
