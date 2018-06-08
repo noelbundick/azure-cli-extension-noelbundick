@@ -258,22 +258,25 @@ def self_destruct_pre_parse_args_handler(_, **kwargs):
 
 
 def deploy_self_destruct_template(cli_ctx, resource):
+    from msrestazure.tools import parse_resource_id
     id = resource['id']
-    if 'type' in resource:
-        resource_type = resource['type']
-        resource_group = resource['resourceGroup']
+    parts = parse_resource_id(id)
+    print(parts)
+    if 'resource_name' in parts:
+        resource_type = parts['resource_type']
+        resource_group = parts['resource_group']
         # Get api-version
-        namespace, resource_type = resource_type.split('/')
         api_version = az_cli(['provider', 'show',
-                            '-n', namespace,
+                            '-n', parts['namespace'],
                             '--query', 'resourceTypes | [?resourceType==`{}`] | [0].apiVersions[0]'.format(resource_type)],
                             output_as_json=False)
+        name = parts['resource_name']
     else:
         resource_type = 'resourceGroup'
-        resource_group = resource['name']
+        resource_group = id.split('/')[-1]
+        name = id.split('/')[-1]
         api_version = '2018-02-01'
     
-    name = resource['name']
 
     # Build ARM URL
     resource_uri = "https://management.azure.com{}?api-version={}".format(id, api_version)
