@@ -8,6 +8,10 @@ steps:
   inputs:
     setuppy: 'src/noelbundick/setup.py'
     signcmd: 'bdist_wheel'
+- task: CopyFiles@2
+  inputs:
+    contents: 'vsts.Dockerfile'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
