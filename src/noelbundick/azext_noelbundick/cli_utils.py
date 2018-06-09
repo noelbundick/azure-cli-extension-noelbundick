@@ -53,16 +53,5 @@ def prepare_cli_command(cmd, output_as_json=True):
         full_cmd += ['--output', 'json']
     else:
         full_cmd += ['--output', 'tsv']
-        
-    # tag newly created resources, containers don't have tags
-    if 'create' in cmd and ('container' not in cmd):
-        create_tags = True
-        for idx, arg in enumerate(cmd):
-            if arg == '--tags':
-                create_tags = False
-                cmd[idx+1] = cmd[idx+1] + ' created_by=noelbundick-extension'
-
-        if create_tags:
-            full_cmd += ['--tags', 'created_by=noelbundick-extension']
 
     return full_cmd
