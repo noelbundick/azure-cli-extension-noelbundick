@@ -261,7 +261,6 @@ def deploy_self_destruct_template(cli_ctx, resource):
     from msrestazure.tools import parse_resource_id
     id = resource['id']
     parts = parse_resource_id(id)
-    print(parts)
     if 'resource_name' in parts:
         resource_type = parts['resource_type']
         resource_group = parts['resource_group']
