@@ -8,6 +8,18 @@ from knack.util import CLIError
 from azure.cli.core.commands import CliCommandType
 from azure.cli.core.commands.parameters import get_enum_type
 from .cli_utils import az_cli
+from knack.log import get_logger
+
+logger = get_logger(__name__)
+
+sp_keyvault = {'active':False}
+
+
+def init(self):
+    import knack.events as events
+    self.cli_ctx.register_event(events.EVENT_INVOKER_PRE_PARSE_ARGS, pre_parse_args_handler)
+    self.cli_ctx.register_event(events.EVENT_INVOKER_POST_CMD_TBL_CREATE, add_parameters)
+    self.cli_ctx.register_event(events.EVENT_INVOKER_TRANSFORM_RESULT, transform_handler)
 
 
 def load_command_table(self, _):
@@ -24,7 +36,7 @@ def load_command_table(self, _):
 def load_arguments(self, _):
     with self.argument_context('ad sp list-mine') as c:
         c.argument('expires_in', options_list=['--expires-in', '-e'])
-
+    
     with self.argument_context('ad sp create-for-ralph') as c:
         c.argument('keyvault', options_list=['--keyvault', '-k'])
         c.argument('secret_name', options_list=['--secret-name', '-s'])
@@ -104,6 +116,70 @@ def list_my_sps(expires_in=None):
             if any(parse(pw['expirationDate']).replace(tzinfo=None) < max_expiry for pw in p['passwords'])]
 
     return principals
+
+
+def pre_parse_args_handler(_, **kwargs):
+    args = kwargs.get('args')
+
+    if args[:4] == ['ad', 'sp', 'credential', 'list'] and '--keyvault' in args:
+        sp_keyvault['active'] = True
+
+        index = args.index('--keyvault')
+        sp_keyvault['keyvault'] = args[index+1]
+        del args[index+1]
+        del args[index]
+
+        index = args.index('--id')
+        sp_keyvault['id'] = args[index+1]
+
+
+def add_parameters(_, **kwargs):
+    from knack.arguments import CLICommandArgument
+    command_table = kwargs.get('cmd_tbl')
+
+    if not command_table:
+        return
+
+    if 'ad sp credential list' in command_table:
+        command = command_table['ad sp credential list']
+        command.arguments['keyvault'] = CLICommandArgument('keyvault', 
+                                        options_list=['--keyvault'],
+                                        arg_group='Key Vault (noelbundick)',
+                                        help='The name of the Key Vault to get the secret value from.')
+
+
+def transform_handler(_, **kwargs):
+    if sp_keyvault['active']:
+        result = kwargs.get('event_data')['result']
+        
+        sp = az_cli(['ad', 'sp', 'show',
+                    '--id', sp_keyvault['id']])
+        secret = az_cli(['keyvault', 'secret', 'show',
+                        '--vault-name', sp_keyvault['keyvault'],
+                        '-n', sp['displayName']])
+        if not secret:
+            logger.warn('Could not find matching secret in keyvault')
+            return
+
+        secret_date = parse(secret['attributes']['updated'])
+        matched = False
+        min_date = secret_date - timedelta(seconds=30)
+        max_date = secret_date + timedelta(seconds=30)
+        for cred in result:
+            if min_date <= parse(cred['startDate']) <= max_date:
+                cred['value'] = secret['value']
+                matched = True
+        
+        if not matched:
+            logger.warn('Found a secret in Key Vault but couldn\'t match to a specific credential')
+            result.append({
+                'customKeyIdentifier': None,
+                'endDate': None,
+                'keyId': None,
+                'source': None,
+                'startDate': None,
+                'value': secret['value']
+            })
 
 
 def get_owned_objects():

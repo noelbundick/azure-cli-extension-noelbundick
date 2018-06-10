@@ -8,7 +8,6 @@ from azure.cli.core._environment import get_config_dir
 from azure.cli.core.commands import CliCommandType
 from azure.cli.core.util import get_file_json
 from datetime import datetime, timedelta
-from knack.events import EVENT_INVOKER_PRE_PARSE_ARGS, EVENT_INVOKER_POST_PARSE_ARGS, EVENT_INVOKER_TRANSFORM_RESULT
 from knack.log import get_logger
 from knack.util import CLIError
 from six.moves import configparser
@@ -26,11 +25,18 @@ self_destruct = {}
 self_destruct['active'] = False
 
 def init(self):
-    # In pre-parse args, we'll gather the --self-destruct arguments, validate them, then strip them out for the actual command being run
-    self.cli_ctx.register_event(EVENT_INVOKER_PRE_PARSE_ARGS, self_destruct_pre_parse_args_handler)
+    from knack import events
+    # In pre-parse args, we'll gather the --self-destruct arguments and validate them
+    self.cli_ctx.register_event(events.EVENT_INVOKER_PRE_PARSE_ARGS, self_destruct_pre_parse_args_handler)
+
+    # Inject the --self-destruct parameter to the command table
+    self.cli_ctx.register_event(events.EVENT_INVOKER_POST_CMD_TBL_CREATE, self_destruct_add_parameters)
+
+    # Strip the --self-destruct args
+    self.cli_ctx.register_event(events.EVENT_INVOKER_POST_PARSE_ARGS, self_destruct_post_parse_args_handler)
 
     # In result transform, we can access the created resource id, and create a Logic App that will delete it at the specified time offset
-    self.cli_ctx.register_event(EVENT_INVOKER_TRANSFORM_RESULT, self_destruct_transform_handler)
+    self.cli_ctx.register_event(events.EVENT_INVOKER_TRANSFORM_RESULT, self_destruct_transform_handler)
 
 
 def load_command_table(self, _):
@@ -40,7 +46,7 @@ def load_command_table(self, _):
         g.custom_command('arm', 'arm')
         g.custom_command('configure', 'configure')
         g.custom_command('disarm', 'disarm')
-        g.custom_command('list', 'list')
+        g.custom_command('list', 'list_self_destruct_resources')
 
 
 # TODO: register --self-destruct on all 'create' commands
@@ -59,7 +65,7 @@ def load_arguments(self, _):
         c.argument('resource_group_name', options_list=['--resource-group', '-g'])
 
 
-def list():
+def list_self_destruct_resources():
     self_destruct_resources = []
 
     groups = az_cli(['group', 'list',
@@ -247,14 +253,17 @@ def self_destruct_pre_parse_args_handler(_, **kwargs):
         delta_str = args[index+1]
         self_destruct['destroyDate'] = get_destruct_time(delta_str)
         
-        # remove self-destruct args so downstream commands never see them
-        del args[index+1]
-        del args[index]
-        
         logger.warn('You\'ve activated a self-destruct sequence! This resource will be deleted at {} UTC'.format(self_destruct['destroyDate']))
         self_destruct['active'] = True
 
         add_self_destruct_tag_args(args, self_destruct['destroyDate'])
+
+
+def self_destruct_post_parse_args_handler(_, **kwargs):
+    args = kwargs.get('args')
+    
+    if 'self_destruct' in args:
+        delattr(args, 'self_destruct')
 
 
 def deploy_self_destruct_template(cli_ctx, resource):
@@ -302,6 +311,22 @@ def self_destruct_transform_handler(cli_ctx, **kwargs):
     if self_destruct['active']:
         result = kwargs.get('event_data')['result']
         deploy_self_destruct_template(cli_ctx, result)
+
+def self_destruct_add_parameters(_, **kwargs):
+    from knack.arguments import CLICommandArgument
+    command_table = kwargs.get('cmd_tbl')
+
+    if not command_table:
+        return
+
+    create_commands = [v for k, v in command_table.items() if 'create' in k]
+    if create_commands:
+        command = create_commands[0]
+        command.arguments['self_destruct'] = CLICommandArgument('self_destruct', 
+                                        options_list=['--self-destruct'],
+                                        arg_group='Self Destruct (noelbundick)',
+                                        help='How long to wait until deletion. You can specify durations like 1d, 6h, 2h30m, 30m, etc')
+        
 
 def get_config_parser():
     if sys.version_info.major == 3:
