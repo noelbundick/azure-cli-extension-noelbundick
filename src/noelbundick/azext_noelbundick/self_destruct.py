@@ -363,6 +363,7 @@ def deploy_self_destruct_template(cli_ctx, resource):
     # Make sure the SP can delete the resource
     authorized = check_service_principal(cli_ctx, id, namespace, resource_type, root_type=root_type)
     if not authorized:
+        logger.error('You may need to run `az self-destruct configure` to reenable self-destruct mode')
         return
 
     # Build ARM URL
@@ -406,7 +407,6 @@ def self_destruct_transform_handler(cli_ctx, **kwargs):
         elif 'NewNSG' in result:
             result = result['NewNSG']
 
-        logger.warn(result)
         deploy_self_destruct_template(cli_ctx, result)
 
 def self_destruct_add_parameters(_, **kwargs):

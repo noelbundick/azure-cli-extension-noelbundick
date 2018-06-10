@@ -42,6 +42,27 @@ helps['ad sp list-mine'] = """
       short-summary: If provided, will only return service principals that expire within the specified time window. You can specify durations like 1d, 6h, 2h30m, 30m, etc
 """
 
+helps['aks grant-access'] = """
+  type: command
+  short-summary: Grant a cluster access to an Azure Container Registry or other Azure resources
+  parameters:
+    - name: --name -n
+      type: string
+      short-summary: Name of the managed cluster
+    - name: --registry -r
+      type: string
+      short-summary: Name of an Azure Container Registry
+    - name: --role
+      type: string
+      short-summary: Role to grant to the cluster. Defaults to 'Reader' for ACR, and 'Contributor' for everything else
+    - name: --target-resource-group
+      type: string
+      short-summary: Name of a resource group
+    - name: --target-resource-id
+      type: string
+      short-summary: Id of an Azure resource
+"""
+
 helps['loganalytics'] = """
   type: group
   short-summary: Manage Log Analytics

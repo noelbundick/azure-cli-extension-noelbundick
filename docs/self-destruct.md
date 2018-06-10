@@ -20,6 +20,17 @@ Because the Logic App is looking for an Azure resourceId, this works on manageme
 
 `--self-destruct` is a magic argument that gets registered on every `az * create` command. When used, it intercepts the output of the original command to schedule automatic deletion
 
+## Validation
+
+Self-destruct mode errs on the side of safety in the cases where it can't determine that a `DELETE` operation will be successful. At minimum, that means the service principal needs:
+
+* To be valid at the time of self-destruct sequence activation
+* The `Microsoft.Authorization/permissions/read` permission on the target resource
+* The appropriate `delete` or `*` permission on the target resource
+* Cannot have `delete` or `*` in the DENY section of any role assignment on the resource
+
+> Note: the permission names vary widely, and wildcards make this a mess. The default role assignment is `Contributor`, which works great
+
 ## Pricing
 
 Logic Apps have a [price per execution](https://azure.microsoft.com/en-us/pricing/details/logic-apps/) billing model, with slight variations per region. In any case, this rounds out to pennies for everyday use cases. Here's an example of heavy use:
