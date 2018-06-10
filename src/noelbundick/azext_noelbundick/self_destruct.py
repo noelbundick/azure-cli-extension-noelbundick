@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import requests
 import sys
 
 from .cli_utils import az_cli
@@ -106,8 +107,6 @@ def arm(cmd, timer, resource_id=None, resource_group_name=None):
     resource, _, _ = get_resource(resource_id=resource_id, resource_group_name=resource_group_name)
     read_self_destruct_config()
     self_destruct['destroyDate'] = get_destruct_time(timer)
-    
-    logger.warn('You\'ve activated a self-destruct sequence! This resource will be deleted at {} UTC'.format(self_destruct['destroyDate']))
 
     deploy_self_destruct_template(cmd.cli_ctx, resource)
 
@@ -223,7 +222,17 @@ def get_destruct_time(delta_str):
         raise CLIError('Could not parse the time offset {}'.format(delta_str))
 
 
+# TODO: update tags of an existing resource during the Logic App ARM template deployment
 def add_self_destruct_tag_args(args, destroy_date):
+    exclude = {
+        'identity',
+        'container'
+    }
+
+    if exclude.intersection(args):
+        logger.warn('Cannot add tags for this resource - it won\'t show in `az self-destruct list`')
+        return
+
     create_tags = True
     for idx, arg in enumerate(args):
         if arg == '--tags':
@@ -252,8 +261,6 @@ def self_destruct_pre_parse_args_handler(_, **kwargs):
         index = args.index('--self-destruct')
         delta_str = args[index+1]
         self_destruct['destroyDate'] = get_destruct_time(delta_str)
-        
-        logger.warn('You\'ve activated a self-destruct sequence! This resource will be deleted at {} UTC'.format(self_destruct['destroyDate']))
         self_destruct['active'] = True
 
         add_self_destruct_tag_args(args, self_destruct['destroyDate'])
@@ -266,12 +273,78 @@ def self_destruct_post_parse_args_handler(_, **kwargs):
         delattr(args, 'self_destruct')
 
 
+def check_service_principal(cli_ctx, resource_id, namespace, resource_type, root_type=None):
+    from azure.cli.core._profile import ServicePrincipalAuth, _authentication_context_factory
+
+    try:
+        # Get SP token
+        sp_auth = ServicePrincipalAuth(self_destruct['clientSecret'])
+        context = _authentication_context_factory(cli_ctx, self_destruct['tenantId'], None)
+        resource = cli_ctx.cloud.endpoints.active_directory_resource_id
+        token = sp_auth.acquire_token(context, resource, self_destruct['clientId'])
+
+        # Check permissions for resource
+        uri = "https://management.azure.com{}/providers/Microsoft.Authorization/permissions?api-version=2015-07-01".format(resource_id)
+        headers = {
+            'Authorization': 'Bearer {}'.format(token['accessToken'])
+        }
+        r = requests.get(uri, headers=headers)
+
+        # TODO: Check expiration date of SP
+
+        # If we can't read permissions - it may or may not be an actual problem
+        # It's perfectly valid to create a "Delete Storage Accounts in resource group X only" cleanup role that can't read roleAssignments
+        # I'd prefer always-correct behavior - so fail fast here
+        if r.status_code != 200:
+            error = r.json()
+            logger.error('There was a failure when checking service principal permissions. Your self-destruct sequence cannot be activated!')
+            logger.error('{}: {}'.format(error['error']['code'], error['error']['message']))
+            return False
+    except Exception:
+        logger.error('There was a failure when checking service principal permissions. Your self-destruct sequence cannot be activated!')
+        return False
+
+    # This is a mine field of complex behavior
+    # action: '*' means everything, unless there's an overriding notAction
+    # There can be wildcards inlined in both actions and notActions
+    # Namespaces often don't match product names, etc
+    permissions = r.json()['value'][0]
+    reqs = {
+        '*',
+        '{}/*'.format(namespace),                           # Microsoft.Storage/*
+        '{}/*/delete'.format(namespace),                    # Microsoft.Storage/*/delete
+        '{}/{}/*'.format(namespace, resource_type),         # Microsoft.Storage/storageAccounts
+        '{}/{}/delete'.format(namespace, resource_type)     # Microsoft.Storage/storageAccounts/delete
+    }
+    if root_type:
+        reqs.add('{}/{}/{}/*'.format(namespace, root_type, resource_type))
+        reqs.add('{}/{}/{}/delete'.format(namespace, root_type, resource_type))
+
+    actions = set(permissions['actions'])
+    not_actions = set(permissions['notActions'])
+
+    if not reqs.intersection(actions) or reqs.intersection(not_actions):
+        logger.error('Service principal delete permissions could not be verified. Your self-destruct sequence cannot be activated!')
+        logger.error('Needed: one of {}'.format(reqs))
+        logger.error('Allow: {}'.format(actions))
+        logger.error('Deny: {}'.format(not_actions))
+        return False
+
+    return True
+
+
 def deploy_self_destruct_template(cli_ctx, resource):
     from msrestazure.tools import parse_resource_id
+
     id = resource['id']
     parts = parse_resource_id(id)
+
+    root_type = None
     if 'resource_name' in parts:
+        namespace = parts['namespace']
         resource_type = parts['resource_type']
+        if parts['type'] != parts['resource_type']:
+            root_type = parts['type']
         resource_group = parts['resource_group']
         # Get api-version
         api_version = az_cli(['provider', 'show',
@@ -280,11 +353,17 @@ def deploy_self_destruct_template(cli_ctx, resource):
                             output_as_json=False)
         name = parts['resource_name']
     else:
-        resource_type = 'resourceGroup'
+        namespace = 'Microsoft.Resources'
+        resource_type = 'resourceGroups'
+        root_type = 'subscriptions'
         resource_group = id.split('/')[-1]
         name = id.split('/')[-1]
         api_version = '2018-02-01'
     
+    # Make sure the SP can delete the resource
+    authorized = check_service_principal(cli_ctx, id, namespace, resource_type, root_type=root_type)
+    if not authorized:
+        return
 
     # Build ARM URL
     resource_uri = "https://management.azure.com{}?api-version={}".format(id, api_version)
@@ -302,14 +381,32 @@ def deploy_self_destruct_template(cli_ctx, resource):
     parameters['servicePrincipalClientSecret'] = {"value": self_destruct['clientSecret']}
     parameters['servicePrincipalTenantId'] = {"value": self_destruct['tenantId']}
     
-    logger.warn('Creating Logic App {} to delete {} at {}'.format(parameters['name']['value'], id, self_destruct['destroyDate']))
     deploy_result = _deploy_arm_template_core(cli_ctx, resource_group, 'self_destruct', template, parameters)
+    logger.warn('You\'ve activated a self-destruct sequence! {} is scheduled for deletion at {} UTC'.format(id, self_destruct['destroyDate']))
     logger.info(deploy_result)
 
 
 def self_destruct_transform_handler(cli_ctx, **kwargs):
     if self_destruct['active']:
         result = kwargs.get('event_data')['result']
+
+        # TODO: some command modules (ahem, networking...) output data in bizarro formats
+        # Ex: https://github.com/Azure/azure-cli/blob/d859a0ad99e3947731c877ac9b81c4431f3422c5/src/command_modules/azure-cli-network/azure/cli/command_modules/network/_format.py#L103
+        # There has to be a better way to hook in and steal the original response
+        # Not sure that transforms are even guaranteed to run in order
+        # This is a placeholder until I find something better
+        if 'newVNet' in result:
+            result = result['newVNet']
+        elif 'publicIp' in result:
+            result = result['publicIp']
+        elif 'TrafficManagerProfile' in result:
+            result = result['TrafficManagerProfile']
+        elif 'NewNIC' in result:
+            result = result['NewNIC']
+        elif 'NewNSG' in result:
+            result = result['NewNSG']
+
+        logger.warn(result)
         deploy_self_destruct_template(cli_ctx, result)
 
 def self_destruct_add_parameters(_, **kwargs):
