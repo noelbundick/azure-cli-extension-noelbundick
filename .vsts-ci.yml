@@ -6,6 +6,7 @@ queue:
 steps:
 - task: stevedower.python.BuildWheel.BuildWheel@1
   inputs:
+    dependencies: pip setuptools wheel==0.30.0 cython
     setuppy: 'src/noelbundick/setup.py'
     signcmd: 'bdist_wheel'
 - task: CopyFiles@2
