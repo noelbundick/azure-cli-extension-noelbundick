@@ -19,6 +19,7 @@ def init(self):
     import knack.events as events
     self.cli_ctx.register_event(events.EVENT_INVOKER_PRE_PARSE_ARGS, pre_parse_args_handler)
     self.cli_ctx.register_event(events.EVENT_INVOKER_POST_CMD_TBL_CREATE, add_parameters)
+    self.cli_ctx.register_event(events.EVENT_INVOKER_POST_PARSE_ARGS, remove_parameters)
     self.cli_ctx.register_event(events.EVENT_INVOKER_TRANSFORM_RESULT, transform_handler)
 
 
@@ -146,6 +147,13 @@ def add_parameters(_, **kwargs):
                                         options_list=['--keyvault'],
                                         arg_group='Key Vault (noelbundick)',
                                         help='The name of the Key Vault to get the secret value from.')
+
+
+def remove_parameters(_, **kwargs):
+    args = kwargs.get('args')
+    
+    if 'keyvault' in args:
+        delattr(args, 'keyvault')
 
 
 def transform_handler(_, **kwargs):
