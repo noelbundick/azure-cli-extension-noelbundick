@@ -134,9 +134,9 @@ def pre_parse_args_handler(_, **kwargs):
         sp_keyvault['id'] = args[index+1]
 
 
-def add_parameters(_, **kwargs):
+def add_parameters(cli_ctx, **kwargs):
     from knack.arguments import CLICommandArgument
-    command_table = kwargs.get('cmd_tbl')
+    command_table = cli_ctx.invocation.commands_loader.command_table
 
     if not command_table:
         return
@@ -149,11 +149,16 @@ def add_parameters(_, **kwargs):
                                         help='The name of the Key Vault to get the secret value from.')
 
 
-def remove_parameters(_, **kwargs):
-    args = kwargs.get('args')
-    
-    if 'keyvault' in args:
-        delattr(args, 'keyvault')
+def remove_parameters(cli_ctx, **kwargs):
+    command_table = cli_ctx.invocation.commands_loader.command_table
+
+    if not command_table:
+        return
+
+    if 'ad sp credential list' in command_table:
+        args = kwargs.get('args')
+        if 'keyvault' in args:
+            delattr(args, 'keyvault')
 
 
 def transform_handler(_, **kwargs):

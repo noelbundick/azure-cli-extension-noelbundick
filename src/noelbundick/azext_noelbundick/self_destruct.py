@@ -409,9 +409,9 @@ def self_destruct_transform_handler(cli_ctx, **kwargs):
 
         deploy_self_destruct_template(cli_ctx, result)
 
-def self_destruct_add_parameters(_, **kwargs):
+def self_destruct_add_parameters(cli_ctx, **kwargs):
     from knack.arguments import CLICommandArgument
-    command_table = kwargs.get('cmd_tbl')
+    command_table = cli_ctx.invocation.commands_loader.command_table
 
     if not command_table:
         return
