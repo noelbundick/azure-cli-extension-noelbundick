@@ -63,6 +63,48 @@ helps['aks grant-access'] = """
       short-summary: Id of an Azure resource
 """
 
+helps['functionapp function'] = """
+  type: group
+  short-summary: Manage specific functions az contained within function apps
+"""
+
+helps['functionapp function keys'] = """
+  type: group
+  short-summary: Manage function keys
+"""
+
+helps['functionapp function keys list'] = """
+  type: command
+  short-summary: Show the keys for an Azure Function
+  parameters:
+    - name: --name -n
+      type: string
+      short-summary: The name of the Function App that contains the function
+    - name: --function -f
+      type: string
+      short-summary: The name of the Function
+    - name: --all -a
+      type: boolean
+      short-summary: Specify --all if you would like to return all keys (including host keys)
+"""
+
+helps['functionapp keys'] = """
+  type: group
+  short-summary: Manage function app keys
+"""
+
+helps['functionapp keys list'] = """
+  type: command
+  short-summary: Show the keys for an Azure Function App
+  parameters:
+    - name: --name -n
+      type: string
+      short-summary: The name of the Function App
+    - name: --all -a
+      type: boolean
+      short-summary: Specify --all if you would like to return all keys (including the _master key)
+"""
+
 helps['loganalytics'] = """
   type: group
   short-summary: Manage Log Analytics
