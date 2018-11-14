@@ -69,19 +69,21 @@ def list_v1_functionapp_keys(resource_group_name, functionapp_name, include_all)
     token_result = requests.get(token_url, headers=arm_headers)
     function_token = token_result.json()
 
+    keys = []
+
+    # Get the keys
+    keys_url = "https://{}.azurewebsites.net/admin/host/keys".format(functionapp_name)
+    function_headers = {"Authorization": "Bearer {}".format(function_token)}
+    keys_result = requests.get(keys_url, headers=function_headers)
+    if keys_result:
+        keys.extend(keys_result.json()['keys'])
+
     # Get the system keys
     keys_url = "https://{}.azurewebsites.net/admin/host/systemkeys".format(functionapp_name)
     function_headers = {"Authorization": "Bearer {}".format(function_token)}
     keys_result = requests.get(keys_url, headers=function_headers)
-    
     if keys_result:
-        keys_result = keys_result.json()
-        if 'keys' in keys_result:
-            keys = keys_result['keys']
-        else:
-            keys = []
-    else:
-        keys = []
+        keys.extend(keys_result.json()['keys'])
     
     # The _master key isn't returned by default. Get it if --all was specified
     if include_all:
@@ -97,20 +99,23 @@ def list_v2_functionapp_keys(resource_group_name, functionapp_name, include_all)
                    '-g', resource_group_name,
                    '-n', functionapp_name])['id']
 
+    keys = []
+
+    # Get the keys
+    url = "https://management.azure.com{}/hostruntime/admin/host/keys?api-version=2018-02-01".format(function_id)
+    access_token, _ = get_access_token()
+    headers = {"Authorization": "Bearer {}".format(access_token)}
+    result = requests.get(url, headers=headers)
+    if result:
+        keys.extend(result.json()['keys'])
+
     # Get the system keys
     url = "https://management.azure.com{}/hostruntime/admin/host/systemkeys?api-version=2018-02-01".format(function_id)
     access_token, _ = get_access_token()
     headers = {"Authorization": "Bearer {}".format(access_token)}
     result = requests.get(url, headers=headers)
-    
     if result:
-        result = result.json()
-        if 'keys' in result:
-            keys = result['keys']
-        else:
-            keys = []
-    else:
-        keys = []
+        keys.extend(result.json()['keys'])
 
     # The _master key isn't returned by default. Get it if --all was specified
     if include_all:
