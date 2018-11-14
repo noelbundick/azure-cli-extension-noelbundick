@@ -16,6 +16,11 @@ This repo contains things that I like or find useful, offered up with absolutely
 * `az ad sp credential list --keyvault`: List a service principal's credentials. Retreive password values from Key Vault
 * `az ad sp list-mine`: List only the service principals you own. Optionally filter by expiration
 
+### Azure Functions
+
+* `az functionapp keys list`: List the host keys for an Azure Function App
+* `az functionapp function keys list`: List the keys for a specific Azure Function
+
 ### Azure Kubernetes Service (AKS)
 
 * `az aks grant-access`: Quickly allow your AKS cluster to access Azure Container Registry or other Azure resources
