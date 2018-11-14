@@ -38,7 +38,15 @@ def list_functionapp_keys(resource_group_name, functionapp_name, include_all=Fal
     url = "https://management.azure.com{}/hostruntime/admin/host/systemkeys?api-version=2018-02-01".format(function_id)
     access_token, _ = get_access_token()
     headers = {"Authorization": "Bearer {}".format(access_token)}
-    keys = requests.get(url, headers=headers).json()['keys']
+    result = requests.get(url, headers=headers)
+    if result:
+        result = result.json()
+        if 'keys' in result:
+            keys = result['keys']
+        else:
+            keys = []
+    else:
+        keys = []
 
     if include_all:
         url = "https://management.azure.com{}/hostruntime/admin/host/systemkeys/_master?api-version=2018-02-01".format(function_id)
