@@ -2,6 +2,8 @@
 
 This repo contains things that I like or find useful, offered up with absolutely zero guarantee that it will work for anyone else
 
+[![Build Status](https://dev.azure.com/noelbundick/noelbundick/_apis/build/status/azure-cli-extension-noelbundick?branchName=master)](https://dev.azure.com/noelbundick/noelbundick/_build/latest?definitionId=24?branchName=master)
+
 ## How to Use
 
 * Use `az extension add` with the [latest release](https://github.com/noelbundick/azure-cli-extension-noelbundick/releases)
