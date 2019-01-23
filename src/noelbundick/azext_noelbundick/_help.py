@@ -229,6 +229,16 @@ helps['self-destruct list'] = """
   short-summary: List items that are scheduled to be deleted based on `self-destruct` tag
 """
 
+helps['shell'] = """
+  type: group
+  short-summary: Manage Azure Cloud Shell
+"""
+
+helps['shell ssh'] = """
+  type: command
+  short-summary: Launch Azure Cloud Shell from your terminal. This command is interactive.
+"""
+
 helps['vm auto-shutdown'] = """
   type: group
   short-summary: Manage auto-shutdown schedules
