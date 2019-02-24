@@ -65,7 +65,7 @@ helps['aks grant-access'] = """
 
 helps['browse'] = """
   type: command
-  short-summary: Interactively browse Azure Resources
+  short-summary: Browse Azure Resources. This command is interactive.
 """
 
 helps['functionapp function'] = """
@@ -242,6 +242,10 @@ helps['shell'] = """
 helps['shell ssh'] = """
   type: command
   short-summary: Launch Azure Cloud Shell from your terminal. This command is interactive.
+  parameters:
+    - name: --shell -s
+      type: string
+      short-summary: The shell to launch
 """
 
 helps['vm auto-shutdown'] = """

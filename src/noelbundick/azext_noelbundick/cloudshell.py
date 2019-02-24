@@ -10,6 +10,7 @@ import tarfile
 
 from azure.cli.core.api import get_config_dir
 from azure.cli.core.commands import CliCommandType
+from azure.cli.core.commands.parameters import get_enum_type
 from knack.log import get_logger
 
 logger = get_logger(__name__)
@@ -23,7 +24,8 @@ def load_command_table(self, _):
 
 
 def load_arguments(self, _):
-    pass
+    with self.argument_context('shell ssh') as c:
+        c.argument('shell', options_list=['--shell', '-s'], arg_type=get_enum_type(['bash', 'pwsh']))
 
 
 def get_latest_azssh():
@@ -38,7 +40,7 @@ def get_latest_azssh():
     return download
 
 
-def launch_cloudshell():
+def launch_cloudshell(shell='bash'):
     is_current = False
     
     latest_azssh = get_latest_azssh()
@@ -65,4 +67,4 @@ def launch_cloudshell():
             f.extractall(path=get_config_dir())
 
     logger.warn('Launching Azure Cloud Shell, type `exit` to disconnect')
-    os.system(azssh)
+    os.system('{} -s {}'.format(azssh, shell))
