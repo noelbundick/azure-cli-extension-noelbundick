@@ -39,27 +39,16 @@ def get_latest_azbrowse():
 
 
 def launch_azbrowse():
-    is_current = False
-    
-    latest_azbrowse = get_latest_azbrowse()
     azbrowse = os.path.join(get_config_dir(), 'azbrowse')
 
-    if os.path.isfile(azbrowse):
-        match = re.search('https://github.com/lawrencegripper/azbrowse/releases/download/v(?P<version>.*)/(.*)', latest_azbrowse)
-        latest_version = match.group('version')
-        current_version = subprocess.check_output([azbrowse, 'version']).decode("utf-8").strip()
-
-        logger.info('Current azbrowse: {}, Latest azbrowse: {}'.format(current_version, latest_version))
-        if latest_version == current_version:
-            is_current = True
-    
-    if not is_current:
+    # azbrowse is self-updating
+    if not os.path.isfile(azbrowse):
+        latest_azbrowse = get_latest_azbrowse()
         logger.warn('Downloading latest azbrowse from {}'.format(latest_azbrowse))
-        executable = os.path.join(get_config_dir(), 'azbrowse')
         r = requests.get(latest_azbrowse, allow_redirects=True, stream=True)
-        with open(executable, 'wb') as f:
+        with open(azbrowse, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
-        os.chmod(executable, 0o755)
+        os.chmod(azbrowse, 0o755)
 
     logger.warn('Launching azbrowse, hit `Ctrl+C` to close')
     os.system(azbrowse)
