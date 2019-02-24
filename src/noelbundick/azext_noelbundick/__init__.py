@@ -6,7 +6,7 @@ from ._help import helps
 
 # Imported modules MUST implement load_command_table and load_arguments
 # Imported modules CAN optionally implement init 
-module_names = ['ad', 'aks', 'cloudshell', 'functionapp', 'loganalytics', 'self_destruct', 'vm']
+module_names = ['ad', 'aks', 'browse', 'cloudshell', 'functionapp', 'loganalytics', 'self_destruct', 'vm']
 
 # Example module as a clean place to start from
 # module_names.append('sample')

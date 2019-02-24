@@ -31,6 +31,10 @@ This repo contains things that I like or find useful, offered up with absolutely
 
 * `az aks grant-access`: Quickly allow your AKS cluster to access Azure Container Registry or other Azure resources
 
+### Browse
+
+* `az browse`: Interactively browse your Azure Resources via [azbrowse](https://github.com/lawrencegripper/azbrowse)
+
 ### Log Analytics
 
 * `az loganalytics workspace create`

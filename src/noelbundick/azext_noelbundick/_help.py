@@ -63,6 +63,11 @@ helps['aks grant-access'] = """
       short-summary: Id of an Azure resource
 """
 
+helps['browse'] = """
+  type: command
+  short-summary: Interactively browse Azure Resources
+"""
+
 helps['functionapp function'] = """
   type: group
   short-summary: Manage specific functions az contained within function apps
