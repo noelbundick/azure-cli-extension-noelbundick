@@ -10,42 +10,7 @@ stages:
   # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Release'], true))
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   jobs:
-    #Your build pipeline references an undefined variable named ‘githubPAT’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
-  - deployment: GitHub
-    environment: production
-    pool:
-      vmImage: vs2017-win2016
-    strategy:
-      runOnce:
-        deploy:    
-          steps:
-          - task: DownloadBuildArtifacts@0
-            displayName: Download artifacts
-            inputs:
-              artifactName: drop
-          - powershell: |
-              $extensionVersion = (Get-ChildItem $(System.ArtifactsDirectory) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
-              Write-Host "##vso[task.setvariable variable=extensionVersion]$extensionVersion"
-            displayName: 'Capture extension version from wheel'
-          - task: jakobehn.jakobehn-vsts-github-tasks.publish-github-release.PublishGitHubRelease@0
-            displayName: 'Publish GitHub Release'
-            inputs:
-              applicationName: 'VSTS-noelbundick'
-              token: '$(githubPAT)'
-              repo: 'azure-cli-extension-noelbundick'
-              owner: noelbundick
-              tagName: 'v$(extensionVersion)'
-              releaseName: 'v$(extensionVersion)'
-              releaseBody: |
-                ```bash
-                az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v$(extensionVersion)/noelbundick-$(extensionVersion)-py2.py3-none-any.whl
-                ```
-                Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
-              draft: true
-              prerelease: true
-              assetsPattern: '$(System.ArtifactsDirectory)\drop\*.whl'
-
-  - deployment: Docker
+  - deployment: Production
     environment: production
     pool:
       vmImage: ubuntu-16.04
@@ -57,10 +22,29 @@ stages:
             displayName: Download artifacts
             inputs:
               artifactName: drop
+
           - powershell: |
               $extensionVersion = (Get-ChildItem $(System.ArtifactsDirectory) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=extensionVersion]$extensionVersion"
             displayName: 'Capture extension version from wheel copy'
+
+          - task: GitHubRelease@0
+            inputs:
+              gitHubConnection: GitHub
+              repositoryName: noelbundick/azure-cli-extension-noelbundick
+              action: create
+              target: $(Build.SourceVersion)
+              tagSource: auto
+              tag: 'v$(extensionVersion)'
+              releaseNotesSource: input
+              releaseNotes: |
+                ```bash
+                az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v$(extensionVersion)/noelbundick-$(extensionVersion)-py2.py3-none-any.whl
+                ```
+                Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
+              assets: '$(System.ArtifactsDirectory)\drop\*.whl'
+              isDraft: true
+              isPreRelease: true
 
           - task: Bash@3
             displayName: Build image
