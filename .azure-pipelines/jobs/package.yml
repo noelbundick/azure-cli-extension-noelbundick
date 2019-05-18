@@ -23,6 +23,13 @@ jobs:
     displayName: Build wheel
 
   - task: CopyFiles@2
+    displayName: Copy wheel
+    inputs:
+      contents: 'dist/*.whl'
+      targetFolder: '$(Build.ArtifactStagingDirectory)'
+
+  - task: CopyFiles@2
+    displayName: Copy Dockerfile
     inputs:
       contents: 'vsts.Dockerfile'
       targetFolder: '$(Build.ArtifactStagingDirectory)'
