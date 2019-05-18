@@ -18,6 +18,8 @@ stages:
       runOnce:
         deploy:    
           steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: Download artifacts
           - powershell: |
               $version = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=version;isSecret=false;isOutput=true;]$version"
@@ -48,6 +50,8 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: Download artifacts
           - powershell: |
               $version = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=version;isSecret=false;isOutput=true;]$version"
