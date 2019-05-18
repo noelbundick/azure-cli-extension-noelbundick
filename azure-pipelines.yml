@@ -40,7 +40,7 @@ stages:
                 ```bash
                 az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v$(extensionVersion)/noelbundick-$(extensionVersion)-py2.py3-none-any.whl
                 ```
-              Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
+                Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
               draft: true
               prerelease: true
               assetsPattern: '$(System.ArtifactsDirectory)\drop\*.whl'
