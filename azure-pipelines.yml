@@ -29,7 +29,7 @@ stages:
               repositoryName: noelbundick/azure-cli-extension-noelbundick
               action: create
               target: $(Build.SourceVersion)
-              tagSource: auto
+              tagSource: manual
               tag: 'v$(extensionVersion)'
               releaseNotesSource: input
               releaseNotes: |
