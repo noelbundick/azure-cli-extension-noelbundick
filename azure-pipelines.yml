@@ -19,7 +19,7 @@ stages:
         deploy:
           steps:
           - powershell: |
-              $extensionVersion = (Get-ChildItem $(System.ArtifactsDirectory) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
+              $extensionVersion = (Get-ChildItem $(Pipeline.Workspace) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=extensionVersion]$extensionVersion"
             displayName: 'Capture extension version from wheel copy'
 
@@ -37,7 +37,7 @@ stages:
                 az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v$(extensionVersion)/noelbundick-$(extensionVersion)-py2.py3-none-any.whl
                 ```
                 Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
-              assets: '$(System.ArtifactsDirectory)\drop\*.whl'
+              assets: '$(Pipeline.Workspace)\drop\*.whl'
               isDraft: true
               isPreRelease: true
 
@@ -45,7 +45,7 @@ stages:
             displayName: Build image
             inputs:
               targetType: inline
-              workingDirectory: $(System.ArtifactsDirectory)/drop
+              workingDirectory: $(Pipeline.Workspace)/drop
               script: |
                 docker build -f vsts.Dockerfile -t acanthamoeba/azure-cli-extension-noelbundick -t acanthamoeba/azure-cli-extension-noelbundick:v$(extensionVersion) .
 
