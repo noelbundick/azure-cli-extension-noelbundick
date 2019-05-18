@@ -67,7 +67,7 @@ stages:
             inputs:
               containerregistrytype: 'Container Registry'
               dockerRegistryConnection: acanthamoeba
-              dockerFile: '**/vsts.Dockerfile'
+              dockerFile: '$(System.ArtifactsDirectory)/drop/vsts.Dockerfile'
               imageName: 'acanthamoeba/azure-cli-extension-noelbundick'
               qualifyImageName: false
               additionalImageTags: 'v$(extensionVersion.version)'
