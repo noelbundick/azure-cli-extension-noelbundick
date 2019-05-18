@@ -10,7 +10,7 @@ stages:
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Release'], true))
   jobs:
     #Your build pipeline references an undefined variable named ‘githubPAT’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
-  - deployment: Publish GitHub Release
+  - deployment: GitHub
     environment: production
     pool:
       vmImage: vs2017-win2016
@@ -40,7 +40,7 @@ stages:
               prerelease: true
               assetsPattern: '$(System.ArtifactsDirectory)\azure-cli-extension-noelbundick\drop\*.whl'
 
-  - deployment: Push to Docker Hub
+  - deployment: Docker
     environment: production
     pool:
       vmImage: ubuntu-16.04
