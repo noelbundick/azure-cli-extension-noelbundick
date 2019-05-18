@@ -31,6 +31,7 @@ stages:
               target: $(Build.SourceVersion)
               tagSource: manual
               tag: 'v$(extensionVersion)'
+              title: 'v$(extensionVersion)'
               releaseNotesSource: input
               releaseNotes: |
                 ```bash
