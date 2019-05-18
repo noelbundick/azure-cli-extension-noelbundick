@@ -7,7 +7,8 @@ stages:
   - template: .azure-pipelines/jobs/package.yml
 
 - stage: Release
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Release'], true))
+  # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Release'], true))
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   jobs:
     #Your build pipeline references an undefined variable named ‘githubPAT’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
   - deployment: GitHub
@@ -20,6 +21,8 @@ stages:
           steps:
           - task: DownloadBuildArtifacts@0
             displayName: Download artifacts
+            inputs:
+              artifactName: drop
           - powershell: |
               $version = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=version;isSecret=false;isOutput=true;]$version"
@@ -52,6 +55,8 @@ stages:
           steps:
           - task: DownloadBuildArtifacts@0
             displayName: Download artifacts
+            inputs:
+              artifactName: drop
           - powershell: |
               $version = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=version;isSecret=false;isOutput=true;]$version"
