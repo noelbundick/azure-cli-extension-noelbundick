@@ -62,16 +62,13 @@ stages:
               Write-Host "##vso[task.setvariable variable=extensionVersion;isSecret=false;isOutput=true;]$extensionVersion"
             displayName: 'Capture extension version from wheel copy'
 
-          - task: Docker@0
-            displayName: 'Build image'
+          - task: Bash@3
+            displayName: Build image
             inputs:
-              containerregistrytype: 'Container Registry'
-              dockerRegistryConnection: acanthamoeba
-              dockerFile: '$(System.ArtifactsDirectory)/drop/vsts.Dockerfile'
-              imageName: 'acanthamoeba/azure-cli-extension-noelbundick'
-              qualifyImageName: false
-              additionalImageTags: 'v$(extensionVersion)'
-              includeLatestTag: true
+              targetType: inline
+              workingDirectory: $(System.ArtifactsDirectory)
+              script: |
+                docker build -f vsts.Dockerfile -t acanthamoeba/azure-cli-extension-noelbundick -t acanthamoeba/azure-cli-extension-noelbundick:v$(extensionVersion) .
 
           - task: Docker@0
             displayName: 'Publish to Docker Hub'
