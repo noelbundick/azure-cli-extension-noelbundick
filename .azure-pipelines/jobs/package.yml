@@ -19,14 +19,16 @@ jobs:
   - script: python -m pip install pip setuptools wheel==0.30.0 cython -U
     displayName: Install packaging utils
 
-  - script: python src/noelbundick/setup.py bdist_wheel
+  - bash: python setup.py bdist_wheel
+    workingDirectory: src/noelbundick
     displayName: Build wheel
 
   - task: CopyFiles@2
     displayName: Copy wheel
     inputs:
-      contents: 'dist/*.whl'
+      contents: 'src/noelbundick/dist/*.whl'
       targetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
 
   - task: CopyFiles@2
     displayName: Copy Dockerfile
