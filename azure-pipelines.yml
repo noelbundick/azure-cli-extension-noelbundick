@@ -24,7 +24,7 @@ stages:
             inputs:
               artifactName: drop
           - powershell: |
-              $extensionVersion = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
+              $extensionVersion = (Get-ChildItem $(System.ArtifactsDirectory) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=extensionVersion;isSecret=false;isOutput=true;]$extensionVersion"
             displayName: 'Capture extension version from wheel'
           - task: jakobehn.jakobehn-vsts-github-tasks.publish-github-release.PublishGitHubRelease@0
@@ -43,7 +43,7 @@ stages:
               Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
               draft: true
               prerelease: true
-              assetsPattern: '$(System.ArtifactsDirectory)\azure-cli-extension-noelbundick\drop\*.whl'
+              assetsPattern: '$(System.ArtifactsDirectory)\drop\*.whl'
 
   - deployment: Docker
     environment: production
@@ -58,7 +58,7 @@ stages:
             inputs:
               artifactName: drop
           - powershell: |
-              $extensionVersion = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
+              $extensionVersion = (Get-ChildItem $(System.ArtifactsDirectory) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
               Write-Host "##vso[task.setvariable variable=extensionVersion;isSecret=false;isOutput=true;]$extensionVersion"
             displayName: 'Capture extension version from wheel copy'
 
