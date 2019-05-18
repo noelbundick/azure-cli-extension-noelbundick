@@ -38,5 +38,8 @@ setup(
     classifiers=CLASSIFIERS,
     packages=find_packages(),
     install_requires=DEPENDENCIES,
-    package_data={'azext_noelbundick': ['self_destruct_template.json']}
+    package_data={'azext_noelbundick': ['self_destruct_template.json']},
+    extras_require={
+        'dev': ['azure-cli', 'black', 'flake8']
+    }
 )

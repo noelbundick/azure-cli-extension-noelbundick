@@ -66,15 +66,16 @@ az group create -n myRG -l eastus --self-destruct 1h
 
 ## Development
 
-Use the `scripts/hack.sh` script
+Install development tools
 
 ```bash
-source scripts/hack.sh
+python3 -m venv .venv
+python -m pip install 'src/noelbundick[dev]'
 ```
 
-or, do it the long way with your directories
+Activate the dev extension
 
 ```bash
 export AZURE_EXTENSION_DIR=~/.azure/devcliextensions
-pip install --upgrade --target ~/.azure/devcliextensions/noelbundick ~/code/noelbundick/azure-cli-extension-noelbundick/src/noelbundick
+pip install --upgrade --target $AZURE_EXTENSION_DIR/noelbundick src/noelbundick
 ```
