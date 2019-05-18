@@ -25,7 +25,7 @@ stages:
               artifactName: drop
           - powershell: |
               $extensionVersion = (Get-ChildItem $(System.ArtifactsDirectory) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
-              Write-Host "##vso[task.setvariable variable=extensionVersion;isSecret=false;isOutput=true;]$extensionVersion"
+              Write-Host "##vso[task.setvariable variable=extensionVersion]$extensionVersion"
             displayName: 'Capture extension version from wheel'
           - task: jakobehn.jakobehn-vsts-github-tasks.publish-github-release.PublishGitHubRelease@0
             displayName: 'Publish GitHub Release'
@@ -59,7 +59,7 @@ stages:
               artifactName: drop
           - powershell: |
               $extensionVersion = (Get-ChildItem $(System.ArtifactsDirectory) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
-              Write-Host "##vso[task.setvariable variable=extensionVersion;isSecret=false;isOutput=true;]$extensionVersion"
+              Write-Host "##vso[task.setvariable variable=extensionVersion]$extensionVersion"
             displayName: 'Capture extension version from wheel copy'
 
           - task: Bash@3
