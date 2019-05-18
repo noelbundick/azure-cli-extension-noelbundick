@@ -1,0 +1,68 @@
+trigger: none
+pr: none
+
+stages:
+- stage: Build
+  jobs:
+  - template: .azure-pipelines/jobs/package.yml
+
+- stage: Release
+  jobs:
+      #Your build pipeline references an undefined variable named ‘githubPAT’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+    - deployment: Publish GitHub Release
+      environment: production
+      pool:
+        vmImage: vs2017-win2016
+      steps:
+      - powershell: |
+          $version = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
+          Write-Host "##vso[task.setvariable variable=version;isSecret=false;isOutput=true;]$version"
+        displayName: 'Capture extension version from wheel'
+      - task: jakobehn.jakobehn-vsts-github-tasks.publish-github-release.PublishGitHubRelease@0
+        displayName: 'Publish GitHub Release'
+        inputs:
+          applicationName: 'VSTS-noelbundick'
+          token: '$(githubPAT)'
+          repo: 'azure-cli-extension-noelbundick'
+          owner: noelbundick
+          tagName: 'v$(extensionVersion.version)'
+          releaseName: 'v$(extensionVersion.version)'
+          releaseBody: |
+            ```bash
+            az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v$(extensionVersion.version)/noelbundick-$(extensionVersion.version)-py2.py3-none-any.whl
+            ```
+          Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
+          draft: true
+          prerelease: true
+          assetsPattern: '$(System.ArtifactsDirectory)\azure-cli-extension-noelbundick\drop\*.whl'
+
+    - deployment: Push to Docker Hub
+      environment: production
+      pool:
+        vmImage: ubuntu-16.04
+      steps:
+      - powershell: |
+          $version = (Get-ChildItem $Env:SYSTEM_ARTIFACTSDIRECTORY -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
+          Write-Host "##vso[task.setvariable variable=version;isSecret=false;isOutput=true;]$version"
+        displayName: 'Capture extension version from wheel copy'
+
+      - task: Docker@0
+        displayName: 'Build image'
+        inputs:
+          containerregistrytype: 'Container Registry'
+          dockerRegistryConnection: acanthamoeba
+          dockerFile: '**/vsts.Dockerfile'
+          imageName: 'acanthamoeba/azure-cli-extension-noelbundick'
+          qualifyImageName: false
+          additionalImageTags: 'v$(extensionVersion.version)'
+          includeLatestTag: true
+
+      - task: Docker@0
+        displayName: 'Publish to Docker Hub'
+        inputs:
+          containerregistrytype: 'Container Registry'
+          dockerRegistryConnection: acanthamoeba
+          action: 'Push an image'
+          imageName: 'acanthamoeba/azure-cli-extension-noelbundick'
+          additionalImageTags: 'v$(extensionVersion.version)'
+          includeLatestTag: true

@@ -1,31 +1,5 @@
 trigger:
 - master
 
-pool:
-  vmImage: ubuntu-16.04
-
-variables:
-  python.version: 3.7
-
-steps:
-- task: UsePythonVersion@0
-  displayName: Use Python $(python.version)
-  inputs:
-      versionSpec: '$(python.version)'
-
-- script: python -m pip install pip setuptools wheel==0.30.0 cython -U
-  displayName: Install packaging utils
-
-- script: python src/noelbundick/setup.py bdist_wheel
-  displayName: Build wheel
-
-- task: CopyFiles@2
-  inputs:
-    contents: 'vsts.Dockerfile'
-    targetFolder: '$(Build.ArtifactStagingDirectory)'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: drop
-    publishLocation: Container
+jobs:
+- template: .azure-pipelines/jobs/package.yml
