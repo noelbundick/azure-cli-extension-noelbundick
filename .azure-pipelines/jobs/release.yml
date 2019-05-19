@@ -1,6 +1,7 @@
 jobs:
 - job: Hold for release
-  server: true
+  pool: server
+  timeoutInMinutes: 1440
   steps:
   - task: ManualIntervention@8
 - deployment: Release
