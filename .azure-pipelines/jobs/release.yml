@@ -1,4 +1,8 @@
 jobs:
+- job: Hold for release
+  server: true
+  steps:
+  - task: ManualIntervention@8
 - deployment: Release
   environment: production
   pool:

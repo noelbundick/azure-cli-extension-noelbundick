@@ -7,6 +7,6 @@ stages:
   - template: .azure-pipelines/jobs/build.yml
 
 - stage: Release
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Release'], true))
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   jobs:
   - template: .azure-pipelines/jobs/release.yml
