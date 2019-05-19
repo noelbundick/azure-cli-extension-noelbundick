@@ -46,4 +46,4 @@ jobs:
             Dockerfile: $(Pipeline.Workspace)/drop/vsts.Dockerfile
             tags: |
               latest
-              'v$(extensionVersion)'
+              v$(extensionVersion)
