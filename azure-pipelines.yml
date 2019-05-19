@@ -4,58 +4,9 @@ trigger:
 stages:
 - stage: Build
   jobs:
-  - template: .azure-pipelines/jobs/package.yml
+  - template: .azure-pipelines/jobs/build.yml
 
 - stage: Release
-  # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Release'], true))
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Release'], true))
   jobs:
-  - deployment: Production
-    environment: production
-    pool:
-      vmImage: ubuntu-16.04
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - powershell: |
-              $extensionVersion = (Get-ChildItem $(Pipeline.Workspace) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
-              Write-Host "##vso[task.setvariable variable=extensionVersion]$extensionVersion"
-            displayName: 'Capture extension version from wheel copy'
-
-          - task: GitHubRelease@0
-            inputs:
-              gitHubConnection: GitHub
-              repositoryName: noelbundick/azure-cli-extension-noelbundick
-              action: create
-              target: $(Build.SourceVersion)
-              tagSource: manual
-              tag: 'v$(extensionVersion)'
-              title: 'v$(extensionVersion)'
-              releaseNotesSource: input
-              releaseNotes: |
-                ```bash
-                az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v$(extensionVersion)/noelbundick-$(extensionVersion)-py2.py3-none-any.whl
-                ```
-                Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
-              assets: '$(Pipeline.Workspace)\drop\*.whl'
-              isDraft: true
-              isPreRelease: true
-
-          - task: Bash@3
-            displayName: Build image
-            inputs:
-              targetType: inline
-              workingDirectory: $(Pipeline.Workspace)/drop
-              script: |
-                docker build -f vsts.Dockerfile -t acanthamoeba/azure-cli-extension-noelbundick -t acanthamoeba/azure-cli-extension-noelbundick:v$(extensionVersion) .
-
-          - task: Docker@0
-            displayName: 'Publish to Docker Hub'
-            inputs:
-              containerregistrytype: 'Container Registry'
-              dockerRegistryConnection: acanthamoeba
-              action: 'Push an image'
-              imageName: 'acanthamoeba/azure-cli-extension-noelbundick'
-              additionalImageTags: 'v$(extensionVersion)'
-              includeLatestTag: true
+  - template: .azure-pipelines/jobs/release.yml
