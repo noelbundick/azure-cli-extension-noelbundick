@@ -10,24 +10,25 @@ jobs:
         - powershell: |
             $extensionVersion = (Get-ChildItem $(Pipeline.Workspace) -Recurse -Filter "*.whl" | % {$_.Name -replace '^noelbundick-(.*?)-.*', '$1' })
             Write-Host "##vso[task.setvariable variable=extensionVersion]$extensionVersion"
-          displayName: 'Capture extension version from wheel copy'
+          displayName: Capture extension version from wheel copy
 
         - task: GitHubRelease@0
+          displayName: Create GitHub release
           inputs:
             gitHubConnection: GitHub
             repositoryName: noelbundick/azure-cli-extension-noelbundick
             action: create
             target: $(Build.SourceVersion)
             tagSource: manual
-            tag: 'v$(extensionVersion)'
-            title: 'v$(extensionVersion)'
+            tag: v$(extensionVersion)
+            title: v$(extensionVersion)
             releaseNotesSource: input
             releaseNotes: |
               ```bash
               az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v$(extensionVersion)/noelbundick-$(extensionVersion)-py2.py3-none-any.whl
               ```
-              Docker: '[acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)'
-            assets: '$(Pipeline.Workspace)\drop\*.whl'
+              Docker: [acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)
+            assets: $(Pipeline.Workspace)/drop/*.whl
             isDraft: true
             isPreRelease: true
 
