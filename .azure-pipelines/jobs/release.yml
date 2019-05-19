@@ -37,7 +37,7 @@ jobs:
             command: buildAndPush
             repository: acanthamoeba/azure-cli-extension-noelbundick
             buildContext: $(Pipeline.Workspace)/drop
-            Dockerfile: vsts.Dockerfile
+            Dockerfile: $(Pipeline.Workspace)/drop/vsts.Dockerfile
             tags: |
               latest
               'v$(extensionVersion)'
