@@ -1,11 +1,5 @@
 jobs:
-- job: WaitForRelease
-  pool: server
-  timeoutInMinutes: 1440
-  steps:
-  - task: ManualIntervention@8
 - deployment: Release
-  dependsOn: WaitForRelease
   environment: production
   pool:
     vmImage: ubuntu-16.04
