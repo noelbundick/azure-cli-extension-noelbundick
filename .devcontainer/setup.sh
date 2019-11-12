@@ -3,7 +3,7 @@ set -euo pipefail
 
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-sudo apt-get install -y python3
+sudo apt-get install -y python3 python3-venv
 python3 -m venv .venv
 
 python -m pip install 'src/noelbundick[dev]'
