@@ -5,5 +5,8 @@
   "settings": {
       "python.pythonPath": "${workspaceFolder}/.venv/bin/python3"
   },
-  "postCreateCommand": "/bin/bash .devcontainer/setup.sh"
+  "image": "acanthamoeba/devbox",
+  "experimentalFeatures": {
+    "customContainers": true
+  }
 }
