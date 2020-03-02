@@ -1,0 +1,115 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "name": {
+      "type": "string"
+    },
+    "utcTime": {
+      "type": "string"
+    },
+    "resourceUri": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "contributorRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "name": "[parameters('name')]",
+      "apiVersion": "2019-05-01",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "self-destruct-time": "[parameters('utcTime')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "triggers": {
+            "Recurrence": {
+              "recurrence": {
+                "frequency": "Month",
+                "interval": 16,
+                "startTime": "[parameters('utcTime')]",
+                "timeZone": "UTC"
+              },
+              "type": "Recurrence"
+            }
+          },
+          "actions": {
+            "DeleteResource": {
+              "runAfter": {
+              },
+              "type": "Http",
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.core.windows.net/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "method": "DELETE",
+                "uri": "[parameters('resourceUri')]"
+              }
+            },
+            "DeleteSelf": {
+              "runAfter": {
+                "DeleteResource": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Http",
+              "inputs": {
+                "authentication": {
+                  "audience": "https://management.core.windows.net/",
+                  "type": "ManagedServiceIdentity"
+                },
+                "method": "DELETE",
+                "uri": "[concat('https://management.azure.com', resourceId('Microsoft.Logic/workflows', parameters('name')), '?api-version=2017-07-01')]"
+              }
+            }
+          },
+          "outputs": {
+          }
+        },
+        "parameters": {
+        }
+      },
+      "resources": [
+        {
+          "dependsOn": [
+            "[resourceId('Microsoft.Logic/workflows', parameters('name'))]"
+          ],
+          "type": "providers/roleAssignments",
+          "apiVersion": "2018-09-01-preview",
+          "name": "[concat('Microsoft.Authorization/', guid(concat(resourceGroup().id, parameters('name'), 'Contributor')))]",
+          "properties": {
+            "roleDefinitionId": "[variables('contributorRoleId')]",
+            "principalId": "[reference(resourceId('Microsoft.Logic/workflows', parameters('name')), '2019-05-01', 'Full').identity.principalId]",
+            "principalType": "ServicePrincipal"
+          }
+        }
+      ]
+    },
+    {
+      "dependsOn": [
+        "[resourceId('Microsoft.Logic/workflows', parameters('name'))]"
+      ],
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2018-09-01-preview",
+      "name": "[guid(concat(parameters('resourceUri'), 'Contributor'))]",
+      "properties": {
+        "roleDefinitionId": "[variables('contributorRoleId')]",
+        "principalId": "[reference(resourceId('Microsoft.Logic/workflows', parameters('name')), '2019-05-01', 'Full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      }
+    }
+  ]
+}

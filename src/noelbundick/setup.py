@@ -8,15 +8,13 @@
 from codecs import open
 from setuptools import setup, find_packages
 
-VERSION = "0.0.15"
+VERSION = "0.0.16"
 
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',
     'Intended Audience :: System Administrators',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
@@ -38,8 +36,8 @@ setup(
     classifiers=CLASSIFIERS,
     packages=find_packages(),
     install_requires=DEPENDENCIES,
-    package_data={'azext_noelbundick': ['self_destruct_template.json']},
+    package_data={'azext_noelbundick': ['self_destruct_template_sp.json', 'self_destruct_template_mi.json']},
     extras_require={
-        'dev': ['azure-cli', 'black', 'flake8']
+        'dev': ['azure-cli', 'black', 'flake8', 'pylint']
     }
 )

@@ -45,20 +45,19 @@ def load_command_table(self, _):
 
     with self.command_group('self-destruct', custom_command_type=custom) as g:
         g.custom_command('arm', 'arm')
-        g.custom_command('configure', 'configure')
+        g.custom_command('configure', 'configure_sp')
         g.custom_command('disarm', 'disarm')
         g.custom_command('list', 'list_self_destruct_resources')
 
 
-# TODO: register --self-destruct on all 'create' commands
 def load_arguments(self, _):
     with self.argument_context('self-destruct arm') as c:
         c.argument('resource_id', options_list=['--id'])
         c.argument('resource_group_name', options_list=['--resource-group', '-g'])
         c.argument('timer', options_list=['--timer', '-t'])
+        c.argument('use_sp', options_list=['--service-principal', '--sp'], action='store_true')
 
     with self.argument_context('self-destruct configure') as c:
-        c.argument('force', options_list=['--resource-group', '-g'])
         c.argument('force', options_list=['--force', '-f'])
     
     with self.argument_context('self-destruct disarm') as c:
@@ -100,12 +99,15 @@ def get_resource(resource_id=None, resource_group_name=None):
             raise CLIError('Could not find resource group with name: {}'.format(resource_group_name))
     return resource, resource_type, resource_group
 
-def arm(cmd, timer, resource_id=None, resource_group_name=None):
+def arm(cmd, timer, resource_id=None, resource_group_name=None, use_sp=False):
     if not any([resource_id, resource_group_name]):
         raise CLIError('You must specify a resourceId or resource group name')
 
     resource, _, _ = get_resource(resource_id=resource_id, resource_group_name=resource_group_name)
-    read_self_destruct_config()
+
+    if use_sp:
+        read_self_destruct_sp_config()
+
     self_destruct['destroyDate'] = get_destruct_time(timer)
 
     deploy_self_destruct_template(cmd.cli_ctx, resource)
@@ -157,7 +159,7 @@ def disarm(resource_id=None, resource_group_name=None):
         az_cli(args)
 
 
-def configure(client_id=None, client_secret=None, tenant_id=None, force=False):
+def configure_sp(client_id=None, client_secret=None, tenant_id=None, force=False):
     config = get_config_parser()
     if force:
         try:
@@ -199,7 +201,7 @@ def configure(client_id=None, client_secret=None, tenant_id=None, force=False):
 
 
 # read self-destruct config, error if not present
-def read_self_destruct_config():
+def read_self_destruct_sp_config():
     try:
         config = get_config_parser()
         config.read(SELF_DESTRUCT_PATH)
@@ -255,8 +257,9 @@ def self_destruct_pre_parse_args_handler(_, **kwargs):
             raise CLIError('You can only initiate a self-destruct sequence when creating a resource')
         if 'container' in args:
             raise CLIError('`az container create` does not support tags')
-                
-        read_self_destruct_config()
+
+        if '--self-destruct-sp' in args:
+            read_self_destruct_sp_config()
 
         index = args.index('--self-destruct')
         delta_str = args[index+1]
@@ -271,6 +274,8 @@ def self_destruct_post_parse_args_handler(_, **kwargs):
     
     if 'self_destruct' in args:
         delattr(args, 'self_destruct')
+    if 'self_destruct_sp' in args:
+        delattr(args, 'self_destruct_sp')
 
 
 def check_service_principal(cli_ctx, resource_id, namespace, resource_type, root_type=None):
@@ -360,27 +365,33 @@ def deploy_self_destruct_template(cli_ctx, resource):
         name = id.split('/')[-1]
         api_version = '2018-02-01'
     
-    # Make sure the SP can delete the resource
-    authorized = check_service_principal(cli_ctx, id, namespace, resource_type, root_type=root_type)
-    if not authorized:
-        logger.error('You may need to run `az self-destruct configure` to reenable self-destruct mode')
-        return
+    # Make sure the SP (if specified) can delete the resource
+    if 'client_id' in self_destruct:
+        authorized = check_service_principal(cli_ctx, id, namespace, resource_type, root_type=root_type)
+        if not authorized:
+            logger.error('You may need to run `az self-destruct configure` to reenable self-destruct mode')
+            return
 
     # Build ARM URL
     resource_uri = "https://management.azure.com{}?api-version={}".format(id, api_version)
     logger.info(resource_uri)
     
     # Create Logic App
-    template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'self_destruct_template.json')
+    if 'client_id' in self_destruct:
+        template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'self_destruct_template_sp.json')
+    else:
+        template_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'self_destruct_template_mi.json')
     template = get_file_json(template_file)
     
     parameters = {}
     parameters['name'] = {"value": 'self-destruct-{}-{}-{}'.format(resource_type, resource_group, name)}
     parameters['utcTime'] = {"value": self_destruct['destroyDate'].strftime('%Y-%m-%dT%H:%M:%SZ')}
     parameters['resourceUri'] = {"value": resource_uri}
-    parameters['servicePrincipalClientId'] = {"value": self_destruct['clientId']}
-    parameters['servicePrincipalClientSecret'] = {"value": self_destruct['clientSecret']}
-    parameters['servicePrincipalTenantId'] = {"value": self_destruct['tenantId']}
+
+    if 'client_id' in self_destruct:
+        parameters['servicePrincipalClientId'] = {"value": self_destruct['clientId']}
+        parameters['servicePrincipalClientSecret'] = {"value": self_destruct['clientSecret']}
+        parameters['servicePrincipalTenantId'] = {"value": self_destruct['tenantId']}
     
     deploy_result = _deploy_arm_template_core(cli_ctx, resource_group, 'self_destruct', template, parameters)
     logger.warn('You\'ve activated a self-destruct sequence! {} is scheduled for deletion at {} UTC'.format(id, self_destruct['destroyDate']))
@@ -423,7 +434,12 @@ def self_destruct_add_parameters(cli_ctx, **kwargs):
                                         options_list=['--self-destruct'],
                                         arg_group='Self Destruct (noelbundick)',
                                         help='How long to wait until deletion. You can specify durations like 1d, 6h, 2h30m, 30m, etc')
-        
+        command.arguments['self_destruct_sp'] = CLICommandArgument('self_destruct_sp', 
+                                        options_list=['--self-destruct-sp'],
+                                        action='store_true',
+                                        arg_group='Self Destruct (noelbundick)',
+                                        help='Use legacy behavior that uses a predefined Service Principal')
+
 
 def get_config_parser():
     if sys.version_info.major == 3:

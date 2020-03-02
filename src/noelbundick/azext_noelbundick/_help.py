@@ -197,6 +197,9 @@ helps['self-destruct arm'] = """
     - name: --timer -t
       type: string
       short-summary: How long to wait until deletion. You can specify durations like 1d, 6h, 2h30m, 30m, etc
+    - name: --service-principal --sp
+      type: boolean
+      short-summary: Use legacy behavior that uses a predefined Service Principal
 """
 
 helps['self-destruct configure'] = """
