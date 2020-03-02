@@ -1,6 +1,6 @@
 FROM python:3-alpine AS builder
 
-WORKDIR /noelbundick
+WORKDIR /app
 COPY src/noelbundick .
 RUN python ./setup.py bdist_wheel -d /drop
 
