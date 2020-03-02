@@ -21,10 +21,10 @@ jobs:
         WHEEL=$(basename $(ls /out/*.whl))
         echo "::set-env name=WHEEL::$WHEEL"
 
-        VERSION=v$(ls /out | grep -Po '\w+-\K(\d+\.*)+')
+        VERSION=$(ls /out | grep -Po '\w+-\K(\d+\.*)+')
         echo "::set-env name=VERSION::$VERSION"
 
-        docker tag $IMAGE $IMAGE:$VERSION
+        docker tag $IMAGE $IMAGE:v$VERSION
 
     - uses: actions/upload-artifact@v1
       with:
@@ -37,11 +37,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ env.VERSION }}
-        release_name: ${{ env.VERSION }}
+        tag_name: v${{ env.VERSION }}
+        release_name: v${{ env.VERSION }}
         body: |
           ```bash
-          az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/${{ env.VERSION }}/noelbundick-${{ env.VERSION }}-py3-none-any.whl
+          az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v${{ env.VERSION }}/noelbundick-${{ env.VERSION }}-py3-none-any.whl
           ```
           Docker: [acanthamoeba/azure-cli-extension-noelbundick](https://hub.docker.com/r/acanthamoeba/azure-cli-extension-noelbundick/)
         draft: true
@@ -61,4 +61,4 @@ jobs:
       run: |
         echo "${{ secrets.DOCKER_TOKEN }}" | docker login --username acanthamoeba --password-stdin
         docker push $IMAGE
-        docker push $IMAGE:$VERSION
+        docker push $IMAGE:v$VERSION
