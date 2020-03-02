@@ -59,6 +59,6 @@ jobs:
 
     - if: startsWith(github.ref, 'refs/tags/v') 
       run: |
-        echo "${{ secrets.DOCKER_TOKEN }} | docker login --username acanthamoeba --password-stdin
+        echo "${{ secrets.DOCKER_TOKEN }}" | docker login --username acanthamoeba --password-stdin
         docker push $IMAGE
         docker push $IMAGE:$VERSION
