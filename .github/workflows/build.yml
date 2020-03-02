@@ -17,8 +17,13 @@ jobs:
     - run: |
         docker build -t $IMAGE .
         docker run --rm -v /out:/out $IMAGE /bin/bash -c 'cp /drop/* /out'
+        
         WHEEL=$(basename $(ls /out/*.whl))
+        echo "::set-env name=WHEEL::$WHEEL"
+
         VERSION=v$(ls /out | grep -Po '\w+-\K(\d+\.*)+')
+        echo "::set-env name=VERSION::$VERSION"
+
         docker tag $IMAGE $IMAGE:$VERSION
 
     - uses: actions/upload-artifact@v1
