@@ -466,12 +466,13 @@ def resource_client_factory(cli_ctx, **_):
 
 
 def _deploy_arm_template_core(cli_ctx, resource_group_name, deployment_name, template, parameters):
-    from azure.mgmt.resource.resources.models import DeploymentProperties
+    from azure.mgmt.resource.resources.models import Deployment, DeploymentProperties
     from azure.cli.core.commands import LongRunningOperation
 
     properties = DeploymentProperties(template=template, parameters=parameters, mode='incremental')
+    deployment = Deployment(properties=properties)
     client = resource_client_factory(cli_ctx)
     
-    deploy_poll = client.deployments.create_or_update(resource_group_name, deployment_name, properties, raw=False)
+    deploy_poll = client.deployments.create_or_update(resource_group_name, deployment_name, deployment, raw=False)
     result = LongRunningOperation(cli_ctx)(deploy_poll)
     return result
