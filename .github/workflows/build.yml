@@ -19,15 +19,10 @@ jobs:
         python-version: 3.6
 
     - run: |
-        python ./setup.py bdist_wheel -d dist
+        python ./src/noelbundick/setup.py bdist_wheel -d dist
         
         WHEEL=$(find ./dist -name "*.whl" -printf "%f")
         echo "::set-env name=WHEEL::$WHEEL"
-
-        VERSION=$(ls /out | grep -Po '\w+-\K(\d+\.*)+')
-        echo "::set-env name=VERSION::$VERSION"
-
-        docker tag $IMAGE $IMAGE:v$VERSION
 
     - uses: actions/upload-artifact@v1
       with:
