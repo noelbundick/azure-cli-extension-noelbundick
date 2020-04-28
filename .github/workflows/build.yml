@@ -19,6 +19,7 @@ jobs:
         python-version: 3.6
 
     - run: |
+        python -m pip install -U pip wheel
         python ./src/noelbundick/setup.py bdist_wheel -d dist
         
         WHEEL=$(find ./dist -name "*.whl" -printf "%f")
