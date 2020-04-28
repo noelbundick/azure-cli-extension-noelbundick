@@ -2,7 +2,7 @@
 
 This repo contains things that I like or find useful, offered up with absolutely zero guarantee that it will work for anyone else
 
-[![Build Status](https://dev.azure.com/noelbundick/noelbundick/_apis/build/status/azure-cli-extension-noelbundick?branchName=master)](https://dev.azure.com/noelbundick/noelbundick/_build/latest?definitionId=24?branchName=master)
+![.github/workflows/build.yml](https://github.com/noelbundick/azure-cli-extension-noelbundick/workflows/.github/workflows/build.yml/badge.svg)
 
 ## How to Use
 
@@ -13,10 +13,12 @@ This repo contains things that I like or find useful, offered up with absolutely
 
 ### Azure Active Directory
 
-* `az ad app list-mine`: List only the applications you own
+* ~~`az ad app list-mine`: List only the applications you own~~
+  * Use `az ad app list --show-mine`
 * `az ad sp create-for-ralph`: Create a service principal and store the password in Key Vault ([thread](https://twitter.com/acanthamoeba/status/988185653199360002))
 * `az ad sp credential list --keyvault`: List a service principal's credentials. Retreive password values from Key Vault
-* `az ad sp list-mine`: List only the service principals you own. Optionally filter by expiration
+* ~~`az ad sp list-mine`: List only the service principals you own. Optionally filter by expiration~~
+  * Use `az ad sp list --show-mine`
 
 ### Azure Cloud Shell
 
@@ -35,13 +37,15 @@ This repo contains things that I like or find useful, offered up with absolutely
 
 * `az browse`: Interactively browse your Azure Resources via [azbrowse](https://github.com/lawrencegripper/azbrowse)
 
-### Log Analytics
+### ~~Log Analytics~~
 
-* `az loganalytics workspace create`
-* `az loganalytics workspace delete`
-* `az loganalytics workspace show`
-* `az loganalytics workspace update`
-* `az loganalytics workspace keys list`
+Use `az monitor log-analytics workspace *`
+
+* ~~`az loganalytics workspace create`~~
+* ~~`az loganalytics workspace delete`~~
+* ~~`az loganalytics workspace show`~~
+* ~~`az loganalytics workspace update`~~
+* ~~`az loganalytics workspace keys list`~~
 
 ### [Self-Destruct Mode](docs/self-destruct.md)
 
@@ -77,16 +81,11 @@ az group create -n myRG -l eastus --self-destruct 1h
 
 ## Development
 
-Install development tools
-
-```bash
+```shell
+# one-time configuration
 python3 -m venv .venv
-python -m pip install 'src/noelbundick[dev]'
-```
-
-Activate the dev extension
-
-```bash
-export AZURE_EXTENSION_DIR=~/.azure/devcliextensions
-pip install --upgrade --target $AZURE_EXTENSION_DIR/noelbundick src/noelbundick
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+azdev setup -r .
+azdev extension add noelbundick
 ```

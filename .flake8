@@ -1,0 +1,6 @@
+[flake8]
+ignore =
+  E501, # I don't care about long lines
+  F401, # imported but unused, covered by pylint
+  E203, # https://github.com/psf/black#slices
+  W503 # https://github.com/psf/black#line-breaks--binary-operators

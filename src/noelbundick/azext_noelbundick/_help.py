@@ -1,11 +1,8 @@
 from knack.help_files import helps
 
-helps['ad app list-mine'] = """
-  type: command
-  short-summary: List applications that you own
-"""
-
-helps['ad sp create-for-ralph'] = """
+helps[
+    "ad sp create-for-ralph"
+] = """
   type: command
   short-summary: Create a service principal and store the password in Key Vault
   parameters:
@@ -33,16 +30,9 @@ helps['ad sp create-for-ralph'] = """
       short-summary: Do not create default assignment.
 """
 
-helps['ad sp list-mine'] = """
-  type: command
-  short-summary: List service principals that you own
-  parameters:
-    - name: --expires-in -e
-      type: string
-      short-summary: If provided, will only return service principals that expire within the specified time window. You can specify durations like 1d, 6h, 2h30m, 30m, etc
-"""
-
-helps['aks grant-access'] = """
+helps[
+    "aks grant-access"
+] = """
   type: command
   short-summary: Grant a cluster access to an Azure Container Registry or other Azure resources
   parameters:
@@ -63,22 +53,30 @@ helps['aks grant-access'] = """
       short-summary: Id of an Azure resource
 """
 
-helps['browse'] = """
+helps[
+    "browse"
+] = """
   type: command
   short-summary: Browse Azure Resources. This command is interactive.
 """
 
-helps['functionapp function'] = """
+helps[
+    "functionapp function"
+] = """
   type: group
   short-summary: Manage specific functions az contained within function apps
 """
 
-helps['functionapp function keys'] = """
+helps[
+    "functionapp function keys"
+] = """
   type: group
   short-summary: Manage function keys
 """
 
-helps['functionapp function keys list'] = """
+helps[
+    "functionapp function keys list"
+] = """
   type: command
   short-summary: Show the keys for an Azure Function
   parameters:
@@ -93,12 +91,16 @@ helps['functionapp function keys list'] = """
       short-summary: Specify --all if you would like to return all keys (including host keys)
 """
 
-helps['functionapp keys'] = """
+helps[
+    "functionapp keys"
+] = """
   type: group
   short-summary: Manage function app keys
 """
 
-helps['functionapp keys list'] = """
+helps[
+    "functionapp keys list"
+] = """
   type: command
   short-summary: Show the keys for an Azure Function App
   parameters:
@@ -110,81 +112,16 @@ helps['functionapp keys list'] = """
       short-summary: Specify --all if you would like to return all keys (including the _master key)
 """
 
-helps['loganalytics'] = """
-  type: group
-  short-summary: Manage Log Analytics
-"""
-
-helps['loganalytics workspace'] = """
-  type: group
-  short-summary: Manage Log Analytics workspaces
-"""
-
-helps['loganalytics workspace keys'] = """
-  type: group
-  short-summary: Manage Log Analytics workspace keys
-"""
-
-helps['loganalytics workspace show'] = """
-  type: command
-  short-summary: Show Log Analytics workspace properties
-  parameters:
-    - name: --name -n
-      type: string
-      short-summary: The name of the workspace
-"""
-
-helps['loganalytics workspace create'] = """
-  type: command
-  short-summary: Create a new Log Analytics workspace
-  parameters:
-    - name: --name -n
-      type: string
-      short-summary: The name of the workspace
-    - name: --sku
-      type: string
-      short-summary: (Optional) The SKU of the workspace. The SKU must match the pricing tier for your subscription (http://aka.ms/PricingTierWarning)
-"""
-
-helps['loganalytics workspace update'] = """
-  type: command
-  short-summary: Update the properties of a Log Analytics workspace
-  parameters:
-    - name: --name -n
-      type: string
-      short-summary: The name of the workspace
-    - name: --sku
-      type: string
-      short-summary: (Optional) The SKU of the workspace. The SKU must match the pricing tier for your subscription (http://aka.ms/PricingTierWarning)
-    - name: --retention
-      type: int
-      short-summary: (Optional) The retention, in days, to keep logs. 7 days for the Free SKU. 30 to 730 days for Standalone and PerGB2018.
-"""
-
-helps['loganalytics workspace delete'] = """
-  type: command
-  short-summary: Delete a Log Analytics workspace
-  parameters:
-    - name: --name -n
-      type: string
-      short-summary: The name of the workspace
-"""
-
-helps['loganalytics workspace keys list'] = """
-  type: command
-  short-summary: Show the keys for a Log Analytics workspace
-  parameters:
-    - name: --name -n
-      type: string
-      short-summary: The name of the workspace
-"""
-
-helps['self-destruct'] = """
+helps[
+    "self-destruct"
+] = """
   type: group
   short-summary: Manage automatic deletion settings
 """
 
-helps['self-destruct arm'] = """
+helps[
+    "self-destruct arm"
+] = """
   type: command
   short-summary: Schedule automatic deletion of a resource
   parameters:
@@ -202,7 +139,9 @@ helps['self-destruct arm'] = """
       short-summary: Use legacy behavior that uses a predefined Service Principal
 """
 
-helps['self-destruct configure'] = """
+helps[
+    "self-destruct configure"
+] = """
   type: command
   short-summary: Configure the service principal used for automatic deletion
   parameters:
@@ -220,7 +159,9 @@ helps['self-destruct configure'] = """
       short-summary: The tenantId of the service principal
 """
 
-helps['self-destruct disarm'] = """
+helps[
+    "self-destruct disarm"
+] = """
   type: command
   short-summary: Cancel automatic deletion of a resource
   parameters:
@@ -232,17 +173,23 @@ helps['self-destruct disarm'] = """
       short-summary: The name of a resource group that is scheduled for deletion
 """
 
-helps['self-destruct list'] = """
+helps[
+    "self-destruct list"
+] = """
   type: command
   short-summary: List items that are scheduled to be deleted based on `self-destruct` tag
 """
 
-helps['shell'] = """
+helps[
+    "shell"
+] = """
   type: group
   short-summary: Manage Azure Cloud Shell
 """
 
-helps['shell ssh'] = """
+helps[
+    "shell ssh"
+] = """
   type: command
   short-summary: Launch Azure Cloud Shell from your terminal. This command is interactive.
   parameters:
@@ -251,12 +198,16 @@ helps['shell ssh'] = """
       short-summary: The shell to launch
 """
 
-helps['vm auto-shutdown'] = """
+helps[
+    "vm auto-shutdown"
+] = """
   type: group
   short-summary: Manage auto-shutdown schedules
 """
 
-helps['vm auto-shutdown enable'] = """
+helps[
+    "vm auto-shutdown enable"
+] = """
   type: command
   short-summary: Enable auto-shutdown for a VM
   long-summary: This command also overrides an existing auto-shutdown schedule
@@ -273,7 +224,9 @@ helps['vm auto-shutdown enable'] = """
       long-summary: "Tip: specifying something bogus like '-tz foo' will spew out an error with the possible values."
 """
 
-helps['vm auto-shutdown disable'] = """
+helps[
+    "vm auto-shutdown disable"
+] = """
   type: command
   short-summary: Disable auto-shutdown for a VM
   parameters:
@@ -282,7 +235,9 @@ helps['vm auto-shutdown disable'] = """
       short-summary: The name of the virtual machine
 """
 
-helps['vm auto-shutdown show'] = """
+helps[
+    "vm auto-shutdown show"
+] = """
   type: command
   short-summary: Show the current auto-shutdown schedule for a VM
   parameters:
