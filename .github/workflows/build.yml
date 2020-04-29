@@ -24,7 +24,7 @@ jobs:
         python -m venv .venv
         source .venv/bin/activate
 
-        python -m pip install -U pip wheel
+        python -m pip install -U pip
         python -m pip install -r requirements.txt
 
         azdev setup -r .
@@ -33,7 +33,7 @@ jobs:
         WHEEL=$(find ./dist -name "*.whl" -printf "%f")
         echo "::set-env name=WHEEL::$WHEEL"
 
-        az extension add -s $WHEEL -y
+        az extension add -s dist/$WHEEL -y
         az extension list
 
     - uses: actions/upload-artifact@v1
