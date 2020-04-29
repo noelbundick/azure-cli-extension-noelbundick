@@ -27,6 +27,9 @@ jobs:
         python -m pip install -U pip
         python -m pip install -r requirements.txt
 
+        pylint --disable=fixme src
+        flake8 src
+
         azdev setup -r .
         azdev extension build noelbundick
         
@@ -62,7 +65,7 @@ jobs:
         release_name: ${{ github.ref }}
         body: |
           ```bash
-          az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/${{ github.ref }}/${{ env.WHEEL }}
+          az extension add --source https://github.com/noelbundick/azure-cli-extension-noelbundick/releases/download/v${{ env.VERSION }}/${{ env.WHEEL }}
           ```
         draft: true
         prerelease: true

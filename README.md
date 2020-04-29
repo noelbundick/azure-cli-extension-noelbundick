@@ -85,6 +85,5 @@ az group create -n myRG -l eastus --self-destruct 1h
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-azdev setup -r .
-azdev extension add noelbundick
+azdev setup -r . -e noelbundick
 ```

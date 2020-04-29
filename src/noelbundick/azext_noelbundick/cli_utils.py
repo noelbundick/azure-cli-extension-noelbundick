@@ -1,8 +1,3 @@
-# --------------------------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License. See License.txt in the project root for license information.
-# --------------------------------------------------------------------------------------------
-
 import json
 import sys
 from subprocess import CalledProcessError, check_output
@@ -17,9 +12,6 @@ def az_cli(cmd, env=None, output_as_json=True):
     cli_cmd = prepare_cli_command(cmd, output_as_json=output_as_json)
     json_cmd_output = run_cli_command(cli_cmd, output_as_json=output_as_json, env=env)
     return json_cmd_output
-
-
-# pylint: disable=inconsistent-return-statements
 
 
 def run_cli_command(cmd, output_as_json=True, empty_json_as_error=False, env=None):
