@@ -18,24 +18,33 @@ jobs:
       with:
         python-version: 3.6
 
-    - run: |
-        set -euo pipefail
-
+    - name: Install dependencies
+      run: |
         python -m venv .venv
         source .venv/bin/activate
 
         python -m pip install -U pip
         python -m pip install -r requirements.txt
+        azdev setup -r .
+
+    - name: Lint code
+      run: |
+        source .venv/bin/activate
 
         pylint --disable=fixme src
         flake8 src
 
-        azdev setup -r .
+    - name: Build extension
+      run: |
+        source .venv/bin/activate
+
         azdev extension build noelbundick
         
         WHEEL=$(find ./dist -name "*.whl" -printf "%f")
         echo "::set-env name=WHEEL::$WHEEL"
 
+    - name: Validate extension can be installed
+      run: |
         az extension add -s dist/$WHEEL -y
         az extension list
 
