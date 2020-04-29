@@ -19,11 +19,21 @@ jobs:
         python-version: 3.6
 
     - run: |
+        python -m pip install pylint flake8
+        pylint src
+        flake8 src
+
+    - run: |
+        cd src/noelbundick
         python -m pip install -U pip wheel
-        python ./src/noelbundick/setup.py bdist_wheel -d dist
+        python setup.py bdist_wheel -d "$GITHUB_WORKSPACE/dist"
         
         WHEEL=$(find ./dist -name "*.whl" -printf "%f")
         echo "::set-env name=WHEEL::$WHEEL"
+
+    - run: |
+        az extension add -s $WHEEL -y
+        az extension list
 
     - uses: actions/upload-artifact@v1
       with:
