@@ -1,12 +1,13 @@
 import json
 import re
 import requests
+from azure.cli.core._profile import Profile
 from azure.cli.core.commands import CliCommandType
 from .cli_utils import az_cli
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl="{}#{{}}".format(__name__))
+    custom = CliCommandType(operations_tmpl=f"{__name__}#{{}}")
 
     with self.command_group("vm auto-shutdown", custom_command_type=custom) as g:
         g.custom_command("enable", "enable_vm_autoshutdown")
@@ -31,9 +32,7 @@ def enable_vm_autoshutdown(vm_name, resource_group_name, time, timezone_id="UTC"
     properties["dailyRecurrence"]["time"] = time
     properties[
         "targetResourceId"
-    ] = "/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}".format(
-        subscription_id, resource_group_name, vm_name
-    )
+    ] = f"/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.Compute/virtualMachines/{vm_name}"
     properties["taskType"] = "ComputeVmShutdownTask"
     properties["timeZoneId"] = timezone_id
 
@@ -44,7 +43,7 @@ def enable_vm_autoshutdown(vm_name, resource_group_name, time, timezone_id="UTC"
             "-g",
             resource_group_name,
             "-n",
-            "shutdown-computevm-{}".format(vm_name),
+            f"shutdown-computevm-{vm_name}",
             "--resource-type",
             "Microsoft.DevTestLab/schedules",
             "-p",
@@ -56,9 +55,7 @@ def enable_vm_autoshutdown(vm_name, resource_group_name, time, timezone_id="UTC"
 
 def disable_vm_autoshutdown(vm_name, resource_group_name):
     _, subscription_id = get_access_token()
-    resource_id = "/subscriptions/{}/resourcegroups/{}/providers/microsoft.devtestlab/schedules/shutdown-computevm-{}".format(
-        subscription_id, resource_group_name, vm_name
-    )
+    resource_id = f"/subscriptions/{subscription_id}/resourcegroups/{resource_group_name}/providers/microsoft.devtestlab/schedules/shutdown-computevm-{vm_name}"
     return az_cli(["resource", "delete", "--ids", resource_id])
 
 
@@ -72,9 +69,7 @@ def show_vm_autoshutdown(_, vm_name, resource_group_name):
         api_version="2016-05-15",
     )
 
-    search_string = "^/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}$".format(
-        subscription_id, resource_group_name, vm_name
-    )
+    search_string = f"^/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.Compute/virtualMachines/{vm_name}$"
     regexp = re.compile(search_string)
 
     active_schedules = [
@@ -88,8 +83,6 @@ def show_vm_autoshutdown(_, vm_name, resource_group_name):
 
 
 def get_access_token():
-    from azure.cli.core._profile import Profile
-
     profile = Profile()
     creds, subscription, _ = profile.get_raw_token()
     return (creds[1], subscription)
@@ -108,17 +101,13 @@ def get_resources(
     if access_token is None:
         access_token, _ = get_access_token()
 
-    url = "https://management.azure.com/subscriptions/{}/providers/{}/{}?api-version={}".format(
-        subscription_id, namespace, resource_type, api_version
-    )
-    headers = {"Authorization": "Bearer {}".format(access_token)}
+    url = f"https://management.azure.com/subscriptions/{subscription_id}/providers/{namespace}/{resource_type}?api-version={api_version}"
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     resources = requests.get(url, headers=headers).json()["value"]
     return resources
 
 
 def get_latest_api_version(namespace, resource_type):
-    query = "resourceTypes[?resourceType=='{}'].apiVersions[0] | [0]".format(
-        resource_type
-    )
+    query = f"resourceTypes[?resourceType=='{resource_type}'].apiVersions[0] | [0]"
     return az_cli(["provider", "show", "-n", namespace, "--query", query])

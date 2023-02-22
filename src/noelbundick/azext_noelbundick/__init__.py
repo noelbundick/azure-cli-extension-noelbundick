@@ -22,14 +22,14 @@ MODULE_NAMES = [
 MODULES = list(
     map(
         importlib.import_module,
-        map(lambda m: "{}.{}".format("azext_noelbundick", m), MODULE_NAMES),
+        map(lambda m: f"azext_noelbundick.{m}", MODULE_NAMES),
     )
 )
 
 
 class NoelBundickCommandsLoader(AzCommandsLoader):
     def __init__(self, cli_ctx=None):
-        super(NoelBundickCommandsLoader, self).__init__(cli_ctx=cli_ctx)
+        super().__init__(cli_ctx=cli_ctx)
         for m in MODULES:
             try:
                 m.init(self)

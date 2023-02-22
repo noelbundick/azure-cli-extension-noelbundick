@@ -2,7 +2,7 @@ from azure.cli.core.commands import CliCommandType
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl="{}#{{}}".format(__name__))
+    custom = CliCommandType(operations_tmpl=f"{__name__}#{{}}")
 
     with self.command_group("hello", custom_command_type=custom) as g:
         g.custom_command("world", "hello_world")
@@ -14,4 +14,4 @@ def load_arguments(self, _):
 
 
 def hello_world(name="World"):
-    return "Hello, {}!".format(name)
+    return f"Hello, {name}!"

@@ -13,7 +13,7 @@ LOGGER = get_logger(__name__)
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl="{}#{{}}".format(__name__))
+    custom = CliCommandType(operations_tmpl=f"{__name__}#{{}}")
 
     with self.command_group("", custom_command_type=custom) as g:
         g.custom_command("browse", "launch_azbrowse")
@@ -25,7 +25,7 @@ def load_arguments(self, _):
 
 
 def get_latest_azbrowse(current_platform):
-    target_platform = "{}_amd64".format(current_platform.lower())
+    target_platform = f"{current_platform.lower()}_amd64"
 
     r = requests.get("https://api.github.com/repos/lawrencegripper/azbrowse/releases")
     releases = r.json()

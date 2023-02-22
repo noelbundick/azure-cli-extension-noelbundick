@@ -34,8 +34,8 @@ jobs:
       run: |
         source .venv/bin/activate
 
-        pylint --disable=fixme src
-        flake8 src
+        pylint src/noelbundick/azext_noelbundick/
+        flake8 src/noelbundick/azext_noelbundick/
 
     - name: Build extension
       run: |

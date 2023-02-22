@@ -143,6 +143,7 @@ disable=print-statement,
         missing-docstring,          # no docs here
         bad-continuation,           # black takes care of this
         too-many-locals,            # these are hacks - this is fine
+        fixme,                      # yep, expect jank in this repo
         duplicate-code              # more hacks - I'm fine with copy/paste
 
 # Enable the message, report, category or checker with the given id(s). You can
@@ -292,7 +293,8 @@ good-names=c,
            ex,
            sp,
            Run,
-           _
+           _,
+           e # short exceptions are cool with me
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no

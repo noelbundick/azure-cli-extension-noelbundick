@@ -15,7 +15,7 @@ LOGGER = get_logger(__name__)
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl="{}#{{}}".format(__name__))
+    custom = CliCommandType(operations_tmpl=f"{__name__}#{{}}")
 
     with self.command_group("shell", custom_command_type=custom) as g:
         g.custom_command("ssh", "launch_cloudshell")
@@ -31,7 +31,7 @@ def load_arguments(self, _):
 
 
 def get_latest_azssh(current_platform):
-    target_platform = "{}-amd64".format(current_platform.lower())
+    target_platform = f"{current_platform.lower()}-amd64"
 
     r = requests.get("https://api.github.com/repos/noelbundick/azssh/releases")
     releases = r.json()
@@ -74,7 +74,7 @@ def launch_cloudshell(shell="bash"):
         LOGGER.warning("Downloading latest azssh from %s", latest_azssh)
         r = requests.get(latest_azssh, allow_redirects=True, stream=True)
         with tarfile.open(fileobj=BytesIO(r.content)) as tar:
-            tar.extract("./{}".format(executable), path=config_dir)
+            tar.extract(f"./{executable}", path=config_dir)
 
     LOGGER.warning("Launching Azure Cloud Shell, type `exit` to disconnect")
-    os.system("{} -s {}".format(azssh, shell))
+    os.system(f"{azssh} -s {shell}")

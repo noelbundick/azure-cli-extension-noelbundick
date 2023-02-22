@@ -4,5 +4,12 @@
         "**/.git/subtree-cache/**": true,
         "**/.venv/**": true
     },
-    "python.defaultInterpreterPath": ".venv/bin/python"
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintPath": ".venv/bin/pylint",
+    "python.formatting.provider": "black",
+    "[python]": {
+        "editor.formatOnPaste": false,
+        "editor.formatOnSaveMode": "file"
+    }
 }

@@ -8,7 +8,7 @@ LOGGER = get_logger(__name__)
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl="{}#{{}}".format(__name__))
+    custom = CliCommandType(operations_tmpl=f"{__name__}#{{}}")
 
     with self.command_group("aks", custom_command_type=custom) as g:
         g.custom_command("grant-access", "grant_access")

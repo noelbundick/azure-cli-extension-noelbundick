@@ -1,9 +1,12 @@
+import re
 from datetime import timedelta
 from dateutil.parser import parse
 
 import requests
 from azure.cli.core.commands import CliCommandType
 from azure.cli.core.commands.parameters import get_enum_type
+from knack import events
+from knack.arguments import CLICommandArgument
 from knack.log import get_logger
 from knack.util import CLIError
 
@@ -15,8 +18,6 @@ SP_KEYVAULT = {"active": False}
 
 
 def init(self):
-    import knack.events as events
-
     self.cli_ctx.register_event(
         events.EVENT_INVOKER_PRE_PARSE_ARGS, pre_parse_args_handler
     )
@@ -30,7 +31,7 @@ def init(self):
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl="{}#{{}}".format(__name__))
+    custom = CliCommandType(operations_tmpl=f"{__name__}#{{}}")
 
     with self.command_group("ad sp", custom_command_type=custom) as g:
         g.custom_command("create-for-ralph", "create_sp_for_keyvault")
@@ -57,7 +58,7 @@ def create_sp_for_keyvault(
 ):
     vault = az_cli(["keyvault", "show", "-n", keyvault])
     if not vault:
-        raise CLIError("Could not find Key Vault with name {}".format(keyvault))
+        raise CLIError(f"Could not find Key Vault with name {keyvault}")
 
     sp_command = ["ad", "sp", "create-for-rbac"]
 
@@ -113,8 +114,6 @@ def pre_parse_args_handler(_, **kwargs):
 
 # pylint: disable=unused-argument
 def add_parameters(cli_ctx, commands_loader):
-    from knack.arguments import CLICommandArgument
-
     command_table = cli_ctx.invocation.commands_loader.command_table
 
     if not command_table:
@@ -194,22 +193,18 @@ def get_owned_objects():
     access_token = token["accessToken"]
     tenant_id = token["tenant"]
 
-    next_url = "https://graph.windows.net/{}/me/ownedObjects?api-version=1.6".format(
-        tenant_id
-    )
-    headers = {"Authorization": "Bearer {}".format(access_token)}
+    next_url = f"https://graph.windows.net/{tenant_id}/me/ownedObjects?api-version=1.6"
+    headers = {"Authorization": f"Bearer {access_token}"}
     objects = []
     while True:
         result = requests.get(next_url, headers=headers).json()
 
         if "odata.error" in result:
-            raise CLIError("Request failed with {}".format(result["odata.error"]))
+            raise CLIError(f"Request failed with {result['odata.error']}")
 
         objects.extend(result["value"])
         if "odata.nextLink" in result:
-            next_url = "https://graph.windows.net/{}/{}&api-version=1.6".format(
-                tenant_id, result["odata.nextLink"]
-            )
+            next_url = f"https://graph.windows.net/{tenant_id}/{result['odata.nextLink']}&api-version=1.6"
         else:
             break
 
@@ -217,8 +212,6 @@ def get_owned_objects():
 
 
 def parse_time(time_str):
-    import re
-
     # you can specify self-destruct dates like 1d, 6h, 2h30m, 30m, etc
     duration_re = re.compile(
         r"^((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?$"

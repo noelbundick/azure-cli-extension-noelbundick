@@ -1,3 +1,4 @@
+import configparser
 import os
 import re
 import sys
@@ -5,11 +6,17 @@ from datetime import datetime, timedelta
 
 import requests
 from azure.cli.core._environment import get_config_dir
-from azure.cli.core.commands import CliCommandType
+from azure.cli.core.auth.identity import ServicePrincipalAuth, ServicePrincipalCredential
+from azure.cli.core.commands import CliCommandType, LongRunningOperation
+from azure.cli.core.commands.client_factory import get_mgmt_service_client
 from azure.cli.core.util import get_file_json
+from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.resource.resources.models import Deployment, DeploymentProperties
+from knack import events
+from knack.arguments import CLICommandArgument
 from knack.log import get_logger
 from knack.util import CLIError
-from six.moves import configparser
+from msrestazure.tools import parse_resource_id
 
 from .cli_utils import az_cli
 
@@ -29,7 +36,6 @@ SELF_DESTRUCT["active"] = False
 
 
 def init(self):
-    from knack import events
 
     # In pre-parse args, we'll gather the --self-destruct arguments and validate them
     self.cli_ctx.register_event(
@@ -53,7 +59,7 @@ def init(self):
 
 
 def load_command_table(self, _):
-    custom = CliCommandType(operations_tmpl="{}#{{}}".format(__name__))
+    custom = CliCommandType(operations_tmpl=f"{__name__}#{{}}")
 
     with self.command_group("self-destruct", custom_command_type=custom) as g:
         g.custom_command("arm", "arm")
@@ -117,16 +123,14 @@ def get_resource(resource_id=None, resource_group_name=None):
         _, resource_type = resource_type.split("/")
         resource_group = resource["resourceGroup"]
         if not resource:
-            raise CLIError("Could not find resource with id: {}".format(resource_id))
+            raise CLIError(f"Could not find resource with id: {resource_id}")
     else:
         resource = az_cli(["group", "show", "-n", resource_group_name])
         resource_type = "resourceGroup"
         resource_group = resource_group_name
         if not resource:
             raise CLIError(
-                "Could not find resource group with name: {}".format(
-                    resource_group_name
-                )
+                f"Could not find resource group with name: {resource_group_name}"
             )
     return resource, resource_type, resource_group
 
@@ -153,7 +157,7 @@ def arm(cmd, timer, resource_id=None, resource_group_name=None, use_sp=False):
 
     args.extend(["--set", "tags.self-destruct"])
     args.extend(
-        ["--set", "tags.self-destruct-date={}".format(SELF_DESTRUCT["destroyDate"])]
+        ["--set", f"tags.self-destruct-date={SELF_DESTRUCT['destroyDate']}"]
     )
     az_cli(args)
 
@@ -167,7 +171,7 @@ def disarm(resource_id=None, resource_group_name=None):
     )
     name = resource["name"]
 
-    logic_name = "self-destruct-{}-{}-{}".format(resource_type, resource_group, name)
+    logic_name = f"self-destruct-{resource_type}-{resource_group}-{name}"
 
     logic_app = az_cli(
         [
@@ -183,9 +187,7 @@ def disarm(resource_id=None, resource_group_name=None):
     )
     if not logic_app:
         raise CLIError(
-            "Could not find a self-destruct Logic App for resource with id: {}".format(
-                name
-            )
+            f"Could not find a self-destruct Logic App for resource with id: {name}"
         )
 
     az_cli(
@@ -258,7 +260,7 @@ def configure_sp(client_id=None, client_secret=None, tenant_id=None, force=False
         config.set("self-destruct", "client-secret", sp["password"])
         config.set("self-destruct", "tenant-id", sp["tenant"])
 
-    with open(SELF_DESTRUCT_PATH, "w+") as config_file:
+    with open(SELF_DESTRUCT_PATH, "w+", encoding="utf-8") as config_file:
         config.write(config_file)
 
     return dict(config.items("self-destruct"))
@@ -276,10 +278,10 @@ def read_self_destruct_sp_config():
             raise CLIError(
                 "Please run `az self-destruct configure` to configure self-destruct mode"
             )
-    except Exception:
+    except Exception as e:
         raise CLIError(
             "Please run `az self-destruct configure` to configure self-destruct mode"
-        )
+        ) from e
 
 
 def get_destruct_time(delta_str):
@@ -288,8 +290,8 @@ def get_destruct_time(delta_str):
         now = datetime.utcnow()
         destroy_date = now + delta
         return destroy_date
-    except Exception:
-        raise CLIError("Could not parse the time offset {}".format(delta_str))
+    except Exception as e:
+        raise CLIError(f"Could not parse the time offset {delta_str}") from e
 
 
 # TODO: update tags of an existing resource during the Logic App ARM template deployment
@@ -306,12 +308,12 @@ def add_self_destruct_tag_args(args, destroy_date):
     for idx, arg in enumerate(args):
         if arg == "--tags":
             create_tags = False
-            args.insert(idx + 1, "self-destruct-date={}".format(destroy_date))
+            args.insert(idx + 1, f"self-destruct-date={destroy_date}")
             args.insert(idx + 1, "self-destruct=")
 
     if create_tags:
         args.extend(
-            ["--tags", "self-destruct", "self-destruct-date={}".format(destroy_date)]
+            ["--tags", "self-destruct", f"self-destruct-date={destroy_date}"]
         )
 
 
@@ -352,25 +354,17 @@ def self_destruct_post_parse_args_handler(_, **kwargs):
 def check_service_principal(
     cli_ctx, resource_id, namespace, resource_type, root_type=None
 ):
-    from azure.cli.core._profile import (
-        ServicePrincipalAuth,
-        _authentication_context_factory,
-    )
-
     try:
+        # TODO: check this after updates
         # Get SP token
-        sp_auth = ServicePrincipalAuth(SELF_DESTRUCT["clientSecret"])
-        context = _authentication_context_factory(
-            cli_ctx, SELF_DESTRUCT["tenantId"], None
-        )
-        resource = cli_ctx.cloud.endpoints.active_directory_resource_id
-        token = sp_auth.acquire_token(context, resource, SELF_DESTRUCT["clientId"])
+        cred_dict = ServicePrincipalAuth.build_credential(SELF_DESTRUCT["clientSecret"])
+        sp_auth = ServicePrincipalAuth.build_from_credential(SELF_DESTRUCT["tenantId"], SELF_DESTRUCT["clientId"], cred_dict)
+        cred = ServicePrincipalCredential(sp_auth)
+        token = cred.acquire_token_for_client(cli_ctx.cloud.endpoints.active_directory_resource_id)
 
         # Check permissions for resource
-        uri = "https://management.azure.com{}/providers/Microsoft.Authorization/permissions?api-version=2015-07-01".format(
-            resource_id
-        )
-        headers = {"Authorization": "Bearer {}".format(token["accessToken"])}
+        uri = f"https://management.azure.com{resource_id}/providers/Microsoft.Authorization/permissions?api-version=2015-07-01"
+        headers = {"Authorization": f"Bearer {token['accessToken']}"}
         r = requests.get(uri, headers=headers)
 
         # TODO: Check expiration date of SP
@@ -398,16 +392,14 @@ def check_service_principal(
     permissions = r.json()["value"][0]
     reqs = {
         "*",
-        "{}/*".format(namespace),  # Microsoft.Storage/*
-        "{}/*/delete".format(namespace),  # Microsoft.Storage/*/delete
-        "{}/{}/*".format(namespace, resource_type),  # Microsoft.Storage/storageAccounts
-        "{}/{}/delete".format(
-            namespace, resource_type
-        ),  # Microsoft.Storage/storageAccounts/delete
+        f"{namespace}/*",  # Microsoft.Storage/*
+        f"{namespace}/*/delete",  # Microsoft.Storage/*/delete
+        f"{namespace}/{resource_type}/*",  # Microsoft.Storage/storageAccounts
+        f"{namespace}/{resource_type}/delete",  # Microsoft.Storage/storageAccounts/delete
     }
     if root_type:
-        reqs.add("{}/{}/{}/*".format(namespace, root_type, resource_type))
-        reqs.add("{}/{}/{}/delete".format(namespace, root_type, resource_type))
+        reqs.add(f"{namespace}/{root_type}/{resource_type}/*")
+        reqs.add(f"{namespace}/{root_type}/{resource_type}/delete")
 
     actions = set(permissions["actions"])
     not_actions = set(permissions["notActions"])
@@ -425,8 +417,6 @@ def check_service_principal(
 
 
 def deploy_self_destruct_template(cli_ctx, resource):
-    from msrestazure.tools import parse_resource_id
-
     resource_id = resource["id"]
     parts = parse_resource_id(resource_id)
 
@@ -445,9 +435,7 @@ def deploy_self_destruct_template(cli_ctx, resource):
                 "-n",
                 parts["namespace"],
                 "--query",
-                "resourceTypes | [?resourceType==`{}`] | [0].apiVersions[0]".format(
-                    resource_type
-                ),
+                f"resourceTypes | [?resourceType==`{resource_type}`] | [0].apiVersions[0]",
             ],
             output_as_json=False,
         )
@@ -472,9 +460,7 @@ def deploy_self_destruct_template(cli_ctx, resource):
             return
 
     # Build ARM URL
-    resource_uri = "https://management.azure.com{}?api-version={}".format(
-        resource_id, api_version
-    )
+    resource_uri = f"https://management.azure.com{resource_id}?api-version={api_version}"
     LOGGER.info(resource_uri)
 
     # Create Logic App
@@ -492,7 +478,7 @@ def deploy_self_destruct_template(cli_ctx, resource):
 
     parameters = {}
     parameters["name"] = {
-        "value": "self-destruct-{}-{}-{}".format(resource_type, resource_group, name)
+        "value": f"self-destruct-{resource_type}-{resource_group}-{name}"
     }
     parameters["utcTime"] = {
         "value": SELF_DESTRUCT["destroyDate"].strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -542,8 +528,6 @@ def self_destruct_transform_handler(cli_ctx, **kwargs):
 
 # pylint: disable=unused-argument
 def self_destruct_add_parameters(cli_ctx, commands_loader):
-    from knack.arguments import CLICommandArgument
-
     command_table = cli_ctx.invocation.commands_loader.command_table
 
     if not command_table:
@@ -584,18 +568,12 @@ def parse_time(time_str):
 
 
 def resource_client_factory(cli_ctx, **_):
-    from azure.cli.core.commands.client_factory import get_mgmt_service_client
-    from azure.mgmt.resource import ResourceManagementClient
-
     return get_mgmt_service_client(cli_ctx, ResourceManagementClient)
 
 
 def _deploy_arm_template_core(
     cli_ctx, resource_group_name, deployment_name, template, parameters
 ):
-    from azure.mgmt.resource.resources.models import Deployment, DeploymentProperties
-    from azure.cli.core.commands import LongRunningOperation
-
     properties = DeploymentProperties(
         template=template, parameters=parameters, mode="incremental"
     )
