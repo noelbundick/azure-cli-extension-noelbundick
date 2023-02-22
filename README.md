@@ -12,12 +12,8 @@ This repo contains things that I like or find useful, offered up with absolutely
 
 ### Azure Active Directory
 
-* ~~`az ad app list-mine`: List only the applications you own~~
-  * Use `az ad app list --show-mine`
 * `az ad sp create-for-ralph`: Create a service principal and store the password in Key Vault ([thread](https://twitter.com/acanthamoeba/status/988185653199360002))
 * `az ad sp credential list --keyvault`: List a service principal's credentials. Retreive password values from Key Vault
-* ~~`az ad sp list-mine`: List only the service principals you own. Optionally filter by expiration~~
-  * Use `az ad sp list --show-mine`
 
 ### Azure Cloud Shell
 
@@ -35,16 +31,6 @@ This repo contains things that I like or find useful, offered up with absolutely
 ### Browse
 
 * `az browse`: Interactively browse your Azure Resources via [azbrowse](https://github.com/lawrencegripper/azbrowse)
-
-### ~~Log Analytics~~
-
-Use `az monitor log-analytics workspace *`
-
-* ~~`az loganalytics workspace create`~~
-* ~~`az loganalytics workspace delete`~~
-* ~~`az loganalytics workspace show`~~
-* ~~`az loganalytics workspace update`~~
-* ~~`az loganalytics workspace keys list`~~
 
 ### [Self-Destruct Mode](docs/self-destruct.md)
 
@@ -80,10 +66,4 @@ az group create -n myRG -l eastus --self-destruct 1h
 
 ## Development
 
-```shell
-# one-time configuration
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-azdev setup -r . -e noelbundick
-```
+Open this repo in a Codespace / devcontainer

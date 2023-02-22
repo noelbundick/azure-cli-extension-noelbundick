@@ -1,8 +1,8 @@
 {
-    "python.pythonPath": ".venv/bin/python",
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,
         "**/.venv/**": true
-    }
+    },
+    "python.defaultInterpreterPath": ".venv/bin/python"
 }
