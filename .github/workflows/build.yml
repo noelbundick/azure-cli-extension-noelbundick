@@ -44,7 +44,7 @@ jobs:
         azdev extension build noelbundick
         
         WHEEL=$(find ./dist -name "*.whl" -printf "%f")
-        echo "::set-env name=WHEEL::$WHEEL"
+        echo "WHEEL=$WHEEL" >> $GITHUB_ENV
 
     - name: Validate extension can be installed
       run: |
